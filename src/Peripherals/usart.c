@@ -32,8 +32,11 @@ void USART2_write(char data)
 
 void USART2_write_buffer(char* buffer, int buffer_size)
 {
-	while(*(buffer++) != '\0')
+	while(*(buffer) != '\0')
 	{
 		USART2_write(*buffer);
+		buffer++;
 	}
+	USART2_write('\r');
+	USART2_write('\n');
 }
