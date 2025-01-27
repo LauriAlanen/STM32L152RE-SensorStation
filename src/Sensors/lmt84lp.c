@@ -8,7 +8,9 @@
 
 #include "stm32l1xx.h"
 #include "lmt84lp.h"
+#include "adc.h"
 #include <stdio.h>
+
 // Mittaa lämpötilaa väliltä -50-150C. -50C --> 1299mV ja 150C --> 183mV
 // PIN PA0
 
@@ -16,9 +18,6 @@
 #define T_MIN -50.0f
 #define U_MIN 1.299f
 #define U_MAX 0.183f
-#define ADC_MAX 4096
-#define ADC_STEP_SIZE_U 0.000805664f // 3.3 / 4096
-
 
 void LMT84LP_init()
 {
