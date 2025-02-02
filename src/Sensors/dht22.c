@@ -5,6 +5,7 @@
 // PIN PA7
 
 #define TIMEOUT_85_US 2720
+#define TIMEOUT_30_US 960
 
 #define DHT22_SWITCH_MODE_OUTPUT()  \
     do { \
@@ -28,6 +29,42 @@ void DHT22_read(char *buffer, int buffer_size)
 {
     DHT22_start();
     DHT22_wait_response();
+
+    DHT22_SWITCH_MODE_INPUT();
+
+    uint8_t current_byte = 0;
+    uint8_t byte_list[5] = {0};
+
+    for (uint8_t i = 0; i < 40; i++)
+    {
+        if (!(i & 7))
+        {
+            byte_list[(i / 8) - 1] = current_byte;
+            current_byte = 0;
+        }
+        
+        while (!(GPIOA->IDR & GPIO_IDR_IDR_7));
+
+        SysTick->LOAD = TIMEOUT_30_US - 1; // Set time wait to 30µs
+        SysTick->VAL = 0;
+        SysTick->CTRL = 5;
+        
+        while (GPIOA->IDR & GPIO_IDR_IDR_7);
+        
+        if ((SysTick->CTRL) & 0x10000)
+        {
+            current_byte = (current_byte << 1) | 1;
+        }
+
+        else
+        {
+            current_byte = (current_byte << 1) | 0;
+        }
+
+        i++;
+    }
+    byte_list[4] = current_byte;
+    SysTick->CTRL = 0;
 }
 
 void DHT22_start()
@@ -41,7 +78,6 @@ void DHT22_start()
 
 void DHT22_wait_response()
 {
-    unsigned long timer;
     DHT22_SWITCH_MODE_INPUT();
 
     SysTick->LOAD = TIMEOUT_85_US - 1; // Set maximum allowable wait time 85µs
@@ -58,6 +94,7 @@ void DHT22_wait_response()
 
     SysTick->LOAD = TIMEOUT_85_US - 1; // Set maximum allowable wait time 85µs
 	SysTick->VAL = 0;
+	SysTick->CTRL = 5;
     while (GPIOA->IDR & GPIO_IDR_IDR_7)
     {
         if ((SysTick->CTRL) & 0x10000)
@@ -65,4 +102,6 @@ void DHT22_wait_response()
             return;
         }
     }
+
+    SysTick->CTRL = 0;
 }
