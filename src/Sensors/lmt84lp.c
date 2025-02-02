@@ -11,7 +11,7 @@
 #include "adc.h"
 #include <stdio.h>
 
-// Mittaa lämpötilaa väliltä -50-150C. -50C --> 1299mV ja 150C --> 183mV
+// Mittaa lï¿½mpï¿½tilaa vï¿½liltï¿½ -50-150C. -50C --> 1299mV ja 150C --> 183mV
 // PIN PA0
 
 #define T_MAX 150.0f
