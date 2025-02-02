@@ -10,5 +10,7 @@
 
 void DHT22_init();
 void DHT22_read(char *buffer, int buffer_size);
-
+void DHT22_start();
+void DHT22_wait_response();
+void DHT22_read_response(uint8_t *data);
 #endif /* SENSORS_DHT22_H_ */

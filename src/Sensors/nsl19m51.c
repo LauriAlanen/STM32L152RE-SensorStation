@@ -10,6 +10,8 @@
 #include "adc.h"
 #include <stdio.h>
 
+// PIN PA1
+
 void NSL19M51_init()
 {
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
