@@ -35,11 +35,11 @@ void DHT22_read(char *buffer, int buffer_size)
     uint8_t current_byte = 0;
     uint8_t byte_list[5] = {0};
 
-    for (uint8_t i = 0; i < 40; i++)
+    for (uint8_t bit = 0; bit < 40; bit++)
     {
-        if (!(i & 7))
+        if (!(bit & 7))
         {
-            byte_list[(i / 8) - 1] = current_byte;
+            byte_list[(bit / 8)] = current_byte;
             current_byte = 0;
         }
         
@@ -53,15 +53,13 @@ void DHT22_read(char *buffer, int buffer_size)
         
         if ((SysTick->CTRL) & 0x10000)
         {
-            current_byte = (current_byte << 1) | 1;
+            current_byte = (current_byte << 1) | 1; // If its longer than 30µs its a 1
         }
 
         else
         {
             current_byte = (current_byte << 1) | 0;
         }
-
-        i++;
     }
     byte_list[4] = current_byte;
     SysTick->CTRL = 0;
