@@ -6,7 +6,6 @@
  */
 
 
-#include "stm32l1xx.h"
 #include "lmt84lp.h"
 #include "adc.h"
 #include <stdio.h>

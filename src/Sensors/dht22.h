@@ -8,6 +8,8 @@
 #ifndef SENSORS_DHT22_H_
 #define SENSORS_DHT22_H_
 
+#include "stm32l1xx.h"
+
 void DHT22_init();
 void DHT22_read(char *buffer, int buffer_size);
 void DHT22_start();

@@ -1,4 +1,5 @@
 #include "timing.h"
+#include "stm32l1xx.h"
 
 void delay_us(unsigned long delay)
 {

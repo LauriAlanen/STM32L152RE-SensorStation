@@ -1,4 +1,5 @@
-/*
+
+ /*
  * nsl19m51.c
  *
  *  Created on: 24 Jan 2025
@@ -6,9 +7,9 @@
  */
 
 #include "nsl19m51.h"
-#include "stm32l1xx.h"
 #include "adc.h"
 #include <stdio.h>
+#include <math.h>
 
 // PIN PA1
 
@@ -33,6 +34,6 @@ void NSL19M51_read(char *buffer, int buffer_size)
 	ADC1->CR2 &= ~ADC_CR2_ADON;
 
 	float voltage = ADC_STEP_SIZE_U * adc_result;
-	float lux = 117.89f * voltage + 102.1f; // TODO
+	float lux = 1.9634f * exp(2.1281f * voltage);
 	snprintf(buffer, buffer_size,"Lux : %.2f && Voltage: %.2f" , lux, voltage);
 }

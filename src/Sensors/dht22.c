@@ -1,5 +1,4 @@
 #include "dht22.h"
-#include "stm32l1xx.h"
 #include "timing.h"
 
 // PIN PA7

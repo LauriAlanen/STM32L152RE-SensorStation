@@ -8,6 +8,8 @@
 #ifndef SENSORS_NSL19M51_H_
 #define SENSORS_NSL19M51_H_
 
+#include "stm32l1xx.h"
+
 void NSL19M51_init();
 void NSL19M51_read(char *buffer, int buffer_size);
 

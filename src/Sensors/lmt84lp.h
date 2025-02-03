@@ -8,6 +8,8 @@
 #ifndef SENSORS_LMT84LP_H_
 #define SENSORS_LMT84LP_H_
 
+#include "stm32l1xx.h"
+
 void LMT84LP_init();
 void LMT84LP_read(char *buffer, int buffer_size);
 
