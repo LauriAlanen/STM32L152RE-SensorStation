@@ -19,6 +19,7 @@ int main(void)
 	char buffer[BUFFER_SIZE];
 
 	// CMSIS Initializations
+
 	SetSysClock();
 	SystemCoreClockUpdate();
 
@@ -44,9 +45,12 @@ int main(void)
 		//NSL19M51_read(buffer, BUFFER_SIZE);
 		//USART2_write_buffer(buffer, BUFFER_SIZE);
 		//DHT22_read(buffer, BUFFER_SIZE);
-		delay_ms(500);
+
+		delay_ms(2000);
+		DHT22_start();
+		//DHT22_wait_response();
 		GPIOA->ODR&=~0x20; //0000 0000 clear bit 5. p186
-		delay_ms(500);
+		delay_ms(2000);
 	}
 	return 0;
 }
