@@ -30,7 +30,7 @@ void USART2_write(char data)
 		USART2->DR=(data);		//p739
 }
 
-void USART2_write_buffer(char* buffer, int buffer_size)
+void USART2_write_buffer(char* buffer)
 {
 	while(*(buffer) != '\0')
 	{

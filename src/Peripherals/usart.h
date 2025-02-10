@@ -11,6 +11,6 @@
 void USART2_init();
 
 void USART2_write(char data);
-void USART2_write_buffer(char* buffer, int buffer_size);
+void USART2_write_buffer(char* buffer);
 
 #endif /* PERIPHERALS_USART_H_ */
