@@ -2,7 +2,6 @@
 #define HSI_VALUE    ((uint32_t)16000000)
 #include "nucleo152start.h"
 
-// Atollic studio ei tykk�� .git hakemistosta!
 
 #include "adc.h"
 #include "usart.h"
