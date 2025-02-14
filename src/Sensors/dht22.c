@@ -1,221 +1,210 @@
 #include "dht22.h"
-#include "timing.h"   // Must provide delay_us() and delay_ms()
+#include "timing.h"
 #include "usart.h"
 #include <stdio.h>
 
-// Using PA7 for DHT22 data.
-// You may need to adjust timeout values if your delay_us() isn’t super accurate.
-#define TIMEOUT_US 100  // generic timeout for waiting state changes
+// PIN PB3
+#define TIMEOUT_20_MS 640000
+#define TIMEOUT_90_US 2880
+#define TIMEOUT_50_US 1600
+#define TIMEOUT_28_US 896
 
-char usart_buffer[100];
+#define BIT_COUNT 40
 
-//---------------------------
-// GPIO mode switching routines
-//---------------------------
-void DHT22_SWITCH_MODE_OUTPUT(void)
+#define SET_SYNC 1
+#define SYNCHRONIZED 0
+
+static volatile uint8_t index = 0;
+static volatile uint8_t synchronize = SET_SYNC;
+static volatile uint32_t pulses[BIT_COUNT];
+static volatile uint8_t data_ready = 0;
+static volatile uint16_t last_time = 0;
+
+void DHT22_SWITCH_MODE_OUTPUT()
 {
-    // Clear the two bits for PA7, then set as output (01)
-    GPIOA->MODER &= ~(3 << (7 * 2));
-    GPIOA->MODER |= (1 << (7 * 2));
+	GPIOA->MODER &= ~GPIO_MODER_MODER7;
+	GPIOA->MODER |= GPIO_MODER_MODER7_0;
 }
 
-void DHT22_SWITCH_MODE_INPUT(void)
+void DHT22_SWITCH_MODE_INPUT()
 {
-    // Clear the two bits for PA7 to set as input (00)
-    GPIOA->MODER &= ~(3 << (7 * 2));
+	GPIOA->MODER &= ~GPIO_MODER_MODER7;
 }
 
-void DHT22_init(void)
-{
-    DHT22_SWITCH_MODE_OUTPUT();
-    // Default high (if not driven otherwise)
-    GPIOA->ODR |= (1 << 7);
-}
-
-//---------------------------
-// Communication routines
-//---------------------------
-
-/*
- * DHT22_start()
- *
- * Pull the data line low for at least 18-20ms to send the start signal,
- * then release the line and switch to input mode. The sensor should then
- * respond with its low/high sequence.
- */
-void DHT22_start(void)
+void DHT22_init()
 {
     DHT22_SWITCH_MODE_OUTPUT();
-    // Pull low for 20ms
-    GPIOA->ODR &= ~(1 << 7);
-    delay_ms(20);
 
-    // Release line (pull high) then wait 20-40µs
-    GPIOA->ODR |= (1 << 7);
-    delay_us(30);
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+    SYSCFG->EXTICR[1] &= ~SYSCFG_EXTICR2_EXTI7_PA;
+    SYSCFG->EXTICR[1] |= SYSCFG_EXTICR2_EXTI7_PA;
 
-    // Switch to input mode to listen for the sensor’s response
-    DHT22_SWITCH_MODE_INPUT();
+    EXTI->IMR |= EXTI_IMR_MR7;
+    EXTI->FTSR |= EXTI_FTSR_FT7;
+    EXTI->RTSR |= EXTI_RTSR_RT7;
+
+    NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
 
-/*
- * DHT22_wait_response()
- *
- * After releasing the line, the sensor will pull it low for ~80µs,
- * then high for ~80µs before starting the 40-bit data transmission.
- *
- * Here we wait for the following sequence:
- *  1. Wait for the sensor to pull the line low.
- *  2. Wait for the sensor to drive it high.
- *  3. Wait for the sensor to pull it low again (start of data bit).
- *
- * Returns 0 if the sequence is detected; 1 if a timeout occurred.
- */
-int DHT22_wait_response(void)
-{
-    uint32_t count;
-
-    // 1. Wait for sensor to pull the line low.
-    count = 0;
-    while (GPIOA->IDR & (1 << 7))  // expecting a transition from high to low
-    {
-        delay_us(1);
-        if (++count > TIMEOUT_US)
-        {
-            USART2_write_buffer("Timeout: Sensor did not pull line low (start response)\n");
-            return 1;
-        }
-    }
-
-    // 2. Wait for sensor to drive the line high.
-    count = 0;
-    while (!(GPIOA->IDR & (1 << 7)))
-    {
-        delay_us(1);
-        if (++count > TIMEOUT_US)
-        {
-            USART2_write_buffer("Timeout: Sensor did not pull line high (response low period too long?)\n");
-            return 1;
-        }
-    }
-
-    // 3. Wait for sensor to pull the line low again (this marks the end of the 80µs high period).
-    count = 0;
-    while (GPIOA->IDR & (1 << 7))
-    {
-        delay_us(1);
-        if (++count > TIMEOUT_US)
-        {
-            USART2_write_buffer("Timeout: Sensor did not pull line low to start data\n");
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-/*
- * DHT22_read_bit()
- *
- * Each bit transmission starts with a 50µs low pulse. After that, the sensor
- * drives the line high for:
- *    ~26-28µs → bit value 0
- *    ~70µs    → bit value 1
- *
- * This routine waits for the line to go high (start of bit), then counts
- * microseconds until the line goes low.
- *
- * Returns:
- *    0 or 1 for a valid bit, or 0xFF if a timeout error occurred.
- */
-uint8_t DHT22_read_bit(void)
-{
-    uint32_t count = 0;
-
-    // Wait for the bit to start: sensor pulls the line high.
-    while (!(GPIOA->IDR & (1 << 7)))
-    {
-        delay_us(1);
-        if (++count > TIMEOUT_US)
-        {
-            USART2_write_buffer("Timeout: waiting for bit start (line high)\n");
-            return 0xFF;  // error indicator
-        }
-    }
-
-    // Now measure how long the line stays high.
-    count = 0;
-    while (GPIOA->IDR & (1 << 7))
-    {
-        delay_us(1);
-        count++;
-        if (count > 100)  // safety cap
-            break;
-    }
-
-    // Choose threshold (here ~40µs): longer means a 1, shorter means a 0.
-    return (count > 40) ? 1 : 0;
-}
-
-/*
- * DHT22_read_byte()
- *
- * Reads 8 bits to form one byte.
- */
-uint8_t DHT22_read_byte(void)
-{
-    uint8_t byte = 0;
-    for (int i = 0; i < 8; i++)
-    {
-        uint8_t bit = DHT22_read_bit();
-        if (bit == 0xFF)  // error indicator from DHT22_read_bit()
-            return 0xFF;
-        byte = (byte << 1) | bit;
-    }
-    return byte;
-}
-
-/*
- * DHT22_read()
- *
- * Initiates communication with the sensor, waits for the response, then reads
- * 5 bytes (humidity high, humidity low, temperature high, temperature low, checksum).
- * Checks the checksum and outputs a formatted string.
- *
- * Returns 0 on success or nonzero on error.
- */
 int DHT22_read(char *buffer, int buffer_size)
 {
+    uint8_t humidity_int, humidity_dec, temp_int, temp_dec, checksum;
+    uint8_t current_byte = 0;
+    uint8_t byte_list[5] = {0};
+
+	EXTI->IMR &= ~EXTI_IMR_IM7;
     DHT22_start();
+
     if (DHT22_wait_response())
     {
-        USART2_write_buffer("DHT22: Sensor did not respond properly\n");
+        USART2_write_buffer("DHT22 Not ready to send data!");
         return 1;
     }
 
-    uint8_t data[5];
-    for (int i = 0; i < 5; i++)
+    if (data_ready)
     {
-        data[i] = DHT22_read_byte();
-        if (data[i] == 0xFF)
+    	EXTI->IMR &= ~EXTI_IMR_IM7;
+    	data_ready = 0;
+
+        for (int bit = 0; bit < 40; bit++)
         {
-            USART2_write_buffer("DHT22: Error reading byte\n");
+        	uint8_t buffer[100];
+
+        	//snprintf(buffer, 100, "%d", pulses[bit]);
+        	//USART2_write_buffer(buffer);
+
+            if (pulses[bit] > 25 && pulses[bit] < 30)
+            {
+            	current_byte = (current_byte << 1) | 0;
+            	USART2_write('0');
+            }
+
+            else
+            {
+            	current_byte = (current_byte << 1) | 1;
+            	USART2_write('1');
+            }
+
+            if (!(bit & 7))
+            {
+                byte_list[(bit / 8)] = current_byte;
+                current_byte = 0;
+            }
+        }
+
+    	EXTI->IMR |= EXTI_IMR_IM7;
+    }
+
+    byte_list[4] = current_byte;
+
+    humidity_int = byte_list[0];
+    humidity_dec = byte_list[1];
+    temp_int = byte_list[2];
+    temp_dec = byte_list[3];
+    checksum = byte_list[4];
+
+    //uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+    //if (checksum != (expected_checksum & 0xFF))
+    //{
+    //    snprintf(buffer, buffer_size, "Checksum ERROR!");
+    //    return 1;
+    //}
+
+	snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
+
+    return 0;
+}
+
+void DHT22_start()
+{
+	// MCU PULL LOW ~20ms
+    DHT22_SWITCH_MODE_OUTPUT();
+    GPIOA->ODR &= ~GPIO_ODR_ODR_7;
+    delay_ms(20);
+
+    // MCU RELEASE LINE 20-40us
+    GPIOA->ODR |= GPIO_ODR_ODR_7;
+    DHT22_SWITCH_MODE_INPUT();
+	delay_us(20);
+}
+
+int DHT22_wait_response()
+{
+    // Here we tell that we need to synchronize the TICK we use the first 2 pulses of dht22 as a reference
+	EXTI->IMR |= EXTI_IMR_IM7;
+    synchronize = SET_SYNC;
+
+    SysTick->LOAD = TIMEOUT_90_US - 1; // Set maximum allowable wait time
+	SysTick->VAL = 0;
+	SysTick->CTRL = 5;
+
+    while (!(GPIOA->IDR & GPIO_IDR_IDR_7))
+    {
+        if ((SysTick->CTRL) & 0x10000)
+        {
+    		USART2_write_buffer("Timeout error when waiting for DHT22 response PULL LOW");
             return 1;
         }
     }
 
-    // Verify checksum: checksum = data[0] + data[1] + data[2] + data[3]
-    uint8_t checksum = data[0] + data[1] + data[2] + data[3];
-    if (checksum != data[4])
+
+    SysTick->LOAD = TIMEOUT_90_US - 1; // Set maximum allowable wait time 85µs
+	SysTick->VAL = 0;
+	SysTick->CTRL = 5;
+    while (GPIOA->IDR & GPIO_IDR_IDR_7)
     {
-        USART2_write_buffer("DHT22: Checksum invalid!\n");
-        return 1;
+        if ((SysTick->CTRL) & 0x10000)
+        {
+    		USART2_write_buffer("Timeout error when waiting for DHT22 response GET READY");
+            return 1;
+        }
     }
 
-    // Format the result string.
-    // (Typically, humidity is sent in data[0] and data[1], and temperature in data[2] and data[3].)
-    snprintf(buffer, buffer_size, "Temperature: %u.%u, Humidity: %u.%u",
-             data[2], data[3], data[0], data[1]);
+    SysTick->CTRL = 0;
 
     return 0;
 }
+
+
+void DHT22_IRQHandler()
+{
+	uint16_t now = TIM2->CNT;
+	//uint16_t pulse_width = now - last_time;
+	uint16_t pulse_width = (now >= last_time) ? (now - last_time) : (0xFFFF - last_time + now);
+	last_time = now;
+
+	// Synchronization guard (The idea is just to set get a valid value for last_time)
+	if (synchronize != SYNCHRONIZED)
+	{
+		synchronize--;
+		EXTI->PR = EXTI_PR_PR7;
+		return;
+	}
+
+	pulses[index] = pulse_width;
+
+	if (!(GPIOA->IDR & GPIO_IDR_IDR_7))
+	{
+		index++;
+		GPIOA->ODR &= ~GPIO_ODR_ODR_5;
+	}
+
+	else
+	{
+		GPIOA->ODR |= GPIO_ODR_ODR_5;
+	}
+
+	if (index >= BIT_COUNT + 1)
+	{
+		data_ready = 1;
+		index = 0;
+	}
+
+	EXTI->PR = EXTI_PR_PR7;
+}
+
+
+
+
+
+

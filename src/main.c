@@ -1,7 +1,6 @@
 #include "stm32l1xx.h"
-#define HSI_VALUE    ((uint32_t)16000000)
+#define HSI_VALUE    ((uint32_t)32000000)
 #include "nucleo152start.h"
-
 
 #include "adc.h"
 #include "usart.h"
@@ -10,6 +9,7 @@
 #include "dht22.h"
 #include "gpio.h"
 #include "timing.h"
+#include "timers.h"
 
 #define BUFFER_SIZE 50
 
@@ -27,7 +27,8 @@ int main(void)
 	// Peripheral Initializations
 	GPIO_init();
 	USART2_init();
-	
+	TIM2_Init();
+
 	// Sensor Initializations
 	LMT84LP_init();
 	NSL19M51_init();
@@ -36,19 +37,17 @@ int main(void)
 
 	while (1)
 	{
-		GPIOA->ODR|=0x20; //0010 0000 set bit 5. p186
+		//GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
 
 		//LMT84LP_read(buffer, BUFFER_SIZE);
 		//USART2_write_buffer(buffer, BUFFER_SIZE);
 
 		//NSL19M51_read(buffer, BUFFER_SIZE);
 		//USART2_write_buffer(buffer, BUFFER_SIZE);
-		delay_ms(1000);
 		DHT22_read(buffer, BUFFER_SIZE);
 		USART2_write_buffer(buffer);
-
-		GPIOA->ODR&=~0x20; //0000 0000 clear bit 5. p186
-		delay_ms(1000);
+		//GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
+		delay_ms(1500);
 	}
 	return 0;
 }

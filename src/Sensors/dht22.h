@@ -17,4 +17,6 @@ uint8_t DHT22_read_bit();
 void DHT22_start();
 int DHT22_wait_response();
 int DHT22_read_response(uint8_t *data);
+void DHT22_IRQHandler();
+
 #endif /* SENSORS_DHT22_H_ */
