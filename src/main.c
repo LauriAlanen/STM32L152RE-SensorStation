@@ -1,5 +1,5 @@
 #include "stm32l1xx.h"
-#define HSI_VALUE    ((uint32_t)32000000)
+#define HSI_VALUE    ((uint32_t)16000000)
 #include "nucleo152start.h"
 
 #include "adc.h"
@@ -44,10 +44,14 @@ int main(void)
 
 		//NSL19M51_read(buffer, BUFFER_SIZE);
 		//USART2_write_buffer(buffer, BUFFER_SIZE);
-		DHT22_read(buffer, BUFFER_SIZE);
-		USART2_write_buffer(buffer);
+
+		if(!(DHT22_read(buffer, BUFFER_SIZE)))
+		{
+			USART2_write_buffer(buffer);
+		}
+
 		//GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
-		delay_ms(1500);
+		delay_ms(5000);
 	}
 	return 0;
 }
