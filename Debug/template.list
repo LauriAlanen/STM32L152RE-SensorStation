@@ -23,21 +23,21 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   9 .ARM.attributes 00000029  00000000  00000000  00020678  2**0
                   CONTENTS, READONLY
- 10 .debug_info   00005424  00000000  00000000  000206a1  2**0
+ 10 .debug_info   0000542e  00000000  00000000  000206a1  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_abbrev 00000fd5  00000000  00000000  00025ac5  2**0
+ 11 .debug_abbrev 00000fd5  00000000  00000000  00025acf  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_aranges 000002c0  00000000  00000000  00026aa0  2**3
+ 12 .debug_aranges 000002c0  00000000  00000000  00026aa8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_ranges 000001f8  00000000  00000000  00026d60  2**3
+ 13 .debug_ranges 000001f8  00000000  00000000  00026d68  2**3
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_line   00001b43  00000000  00000000  00026f58  2**0
+ 14 .debug_line   00001b43  00000000  00000000  00026f60  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    000011da  00000000  00000000  00028a9b  2**0
+ 15 .debug_str    000011da  00000000  00000000  00028aa3  2**0
                   CONTENTS, READONLY, DEBUGGING
- 16 .comment      0000007c  00000000  00000000  00029c75  2**0
+ 16 .comment      0000007c  00000000  00000000  00029c7d  2**0
                   CONTENTS, READONLY
- 17 .debug_frame  00001258  00000000  00000000  00029cf4  2**2
+ 17 .debug_frame  00001258  00000000  00000000  00029cfc  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -1501,302 +1501,302 @@ void DHT22_init()
 {
  8000ff4:	b580      	push	{r7, lr}
  8000ff6:	af00      	add	r7, sp, #0
-    DHT22_SWITCH_MODE_OUTPUT();
- 8000ff8:	f7ff ffda 	bl	8000fb0 <DHT22_SWITCH_MODE_OUTPUT>
-
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
- 8000ffc:	4a12      	ldr	r2, [pc, #72]	; (8001048 <DHT22_init+0x54>)
- 8000ffe:	4b12      	ldr	r3, [pc, #72]	; (8001048 <DHT22_init+0x54>)
- 8001000:	6a1b      	ldr	r3, [r3, #32]
- 8001002:	f043 0301 	orr.w	r3, r3, #1
- 8001006:	6213      	str	r3, [r2, #32]
+ 8000ff8:	4a12      	ldr	r2, [pc, #72]	; (8001044 <DHT22_init+0x50>)
+ 8000ffa:	4b12      	ldr	r3, [pc, #72]	; (8001044 <DHT22_init+0x50>)
+ 8000ffc:	6a1b      	ldr	r3, [r3, #32]
+ 8000ffe:	f043 0301 	orr.w	r3, r3, #1
+ 8001002:	6213      	str	r3, [r2, #32]
     SYSCFG->EXTICR[1] &= ~SYSCFG_EXTICR2_EXTI7_PA;
- 8001008:	4a10      	ldr	r2, [pc, #64]	; (800104c <DHT22_init+0x58>)
- 800100a:	4b10      	ldr	r3, [pc, #64]	; (800104c <DHT22_init+0x58>)
- 800100c:	68db      	ldr	r3, [r3, #12]
- 800100e:	60d3      	str	r3, [r2, #12]
+ 8001004:	4a10      	ldr	r2, [pc, #64]	; (8001048 <DHT22_init+0x54>)
+ 8001006:	4b10      	ldr	r3, [pc, #64]	; (8001048 <DHT22_init+0x54>)
+ 8001008:	68db      	ldr	r3, [r3, #12]
+ 800100a:	60d3      	str	r3, [r2, #12]
     SYSCFG->EXTICR[1] |= SYSCFG_EXTICR2_EXTI7_PA;
- 8001010:	4a0e      	ldr	r2, [pc, #56]	; (800104c <DHT22_init+0x58>)
- 8001012:	4b0e      	ldr	r3, [pc, #56]	; (800104c <DHT22_init+0x58>)
- 8001014:	68db      	ldr	r3, [r3, #12]
- 8001016:	60d3      	str	r3, [r2, #12]
+ 800100c:	4a0e      	ldr	r2, [pc, #56]	; (8001048 <DHT22_init+0x54>)
+ 800100e:	4b0e      	ldr	r3, [pc, #56]	; (8001048 <DHT22_init+0x54>)
+ 8001010:	68db      	ldr	r3, [r3, #12]
+ 8001012:	60d3      	str	r3, [r2, #12]
 
     EXTI->IMR |= EXTI_IMR_MR7;
- 8001018:	4a0d      	ldr	r2, [pc, #52]	; (8001050 <DHT22_init+0x5c>)
- 800101a:	4b0d      	ldr	r3, [pc, #52]	; (8001050 <DHT22_init+0x5c>)
- 800101c:	681b      	ldr	r3, [r3, #0]
- 800101e:	f043 0380 	orr.w	r3, r3, #128	; 0x80
- 8001022:	6013      	str	r3, [r2, #0]
+ 8001014:	4a0d      	ldr	r2, [pc, #52]	; (800104c <DHT22_init+0x58>)
+ 8001016:	4b0d      	ldr	r3, [pc, #52]	; (800104c <DHT22_init+0x58>)
+ 8001018:	681b      	ldr	r3, [r3, #0]
+ 800101a:	f043 0380 	orr.w	r3, r3, #128	; 0x80
+ 800101e:	6013      	str	r3, [r2, #0]
     EXTI->FTSR |= EXTI_FTSR_FT7;
- 8001024:	4a0a      	ldr	r2, [pc, #40]	; (8001050 <DHT22_init+0x5c>)
- 8001026:	4b0a      	ldr	r3, [pc, #40]	; (8001050 <DHT22_init+0x5c>)
- 8001028:	68db      	ldr	r3, [r3, #12]
- 800102a:	f043 0380 	orr.w	r3, r3, #128	; 0x80
- 800102e:	60d3      	str	r3, [r2, #12]
+ 8001020:	4a0a      	ldr	r2, [pc, #40]	; (800104c <DHT22_init+0x58>)
+ 8001022:	4b0a      	ldr	r3, [pc, #40]	; (800104c <DHT22_init+0x58>)
+ 8001024:	68db      	ldr	r3, [r3, #12]
+ 8001026:	f043 0380 	orr.w	r3, r3, #128	; 0x80
+ 800102a:	60d3      	str	r3, [r2, #12]
     EXTI->RTSR |= EXTI_RTSR_RT7;
- 8001030:	4a07      	ldr	r2, [pc, #28]	; (8001050 <DHT22_init+0x5c>)
- 8001032:	4b07      	ldr	r3, [pc, #28]	; (8001050 <DHT22_init+0x5c>)
- 8001034:	689b      	ldr	r3, [r3, #8]
- 8001036:	f043 0380 	orr.w	r3, r3, #128	; 0x80
- 800103a:	6093      	str	r3, [r2, #8]
+ 800102c:	4a07      	ldr	r2, [pc, #28]	; (800104c <DHT22_init+0x58>)
+ 800102e:	4b07      	ldr	r3, [pc, #28]	; (800104c <DHT22_init+0x58>)
+ 8001030:	689b      	ldr	r3, [r3, #8]
+ 8001032:	f043 0380 	orr.w	r3, r3, #128	; 0x80
+ 8001036:	6093      	str	r3, [r2, #8]
 
     NVIC_EnableIRQ(EXTI9_5_IRQn);
- 800103c:	2017      	movs	r0, #23
- 800103e:	f7ff ff9f 	bl	8000f80 <NVIC_EnableIRQ>
+ 8001038:	2017      	movs	r0, #23
+ 800103a:	f7ff ffa1 	bl	8000f80 <NVIC_EnableIRQ>
 }
+ 800103e:	bf00      	nop
+ 8001040:	bd80      	pop	{r7, pc}
  8001042:	bf00      	nop
- 8001044:	bd80      	pop	{r7, pc}
- 8001046:	bf00      	nop
- 8001048:	40023800 	.word	0x40023800
- 800104c:	40010000 	.word	0x40010000
- 8001050:	40010400 	.word	0x40010400
+ 8001044:	40023800 	.word	0x40023800
+ 8001048:	40010000 	.word	0x40010000
+ 800104c:	40010400 	.word	0x40010400
 
-08001054 <DHT22_read>:
+08001050 <DHT22_read>:
 
 int DHT22_read(char *buffer, int buffer_size)
 {
- 8001054:	b5b0      	push	{r4, r5, r7, lr}
- 8001056:	b0a4      	sub	sp, #144	; 0x90
- 8001058:	af04      	add	r7, sp, #16
- 800105a:	6078      	str	r0, [r7, #4]
- 800105c:	6039      	str	r1, [r7, #0]
+ 8001050:	b5b0      	push	{r4, r5, r7, lr}
+ 8001052:	b0a4      	sub	sp, #144	; 0x90
+ 8001054:	af04      	add	r7, sp, #16
+ 8001056:	6078      	str	r0, [r7, #4]
+ 8001058:	6039      	str	r1, [r7, #0]
     uint8_t humidity_int, humidity_dec, temp_int, temp_dec, checksum;
     uint8_t current_byte = 0;
- 800105e:	2300      	movs	r3, #0
- 8001060:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
+ 800105a:	2300      	movs	r3, #0
+ 800105c:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
     uint8_t byte_list[5] = {0};
- 8001064:	f107 036c 	add.w	r3, r7, #108	; 0x6c
- 8001068:	2200      	movs	r2, #0
- 800106a:	601a      	str	r2, [r3, #0]
- 800106c:	711a      	strb	r2, [r3, #4]
+ 8001060:	f107 036c 	add.w	r3, r7, #108	; 0x6c
+ 8001064:	2200      	movs	r2, #0
+ 8001066:	601a      	str	r2, [r3, #0]
+ 8001068:	711a      	strb	r2, [r3, #4]
+
+	EXTI->IMR &= ~EXTI_IMR_IM7;
+ 800106a:	4a6b      	ldr	r2, [pc, #428]	; (8001218 <DHT22_read+0x1c8>)
+ 800106c:	4b6a      	ldr	r3, [pc, #424]	; (8001218 <DHT22_read+0x1c8>)
+ 800106e:	681b      	ldr	r3, [r3, #0]
+ 8001070:	f023 0380 	bic.w	r3, r3, #128	; 0x80
+ 8001074:	6013      	str	r3, [r2, #0]
+    DHT22_start();
+ 8001076:	f000 f8df 	bl	8001238 <DHT22_start>
+
+    if (DHT22_wait_response())
+ 800107a:	f000 f8f9 	bl	8001270 <DHT22_wait_response>
+ 800107e:	4603      	mov	r3, r0
+ 8001080:	2b00      	cmp	r3, #0
+ 8001082:	d004      	beq.n	800108e <DHT22_read+0x3e>
+    {
+        USART2_write_buffer("DHT22 Not ready to send data!");
+ 8001084:	4865      	ldr	r0, [pc, #404]	; (800121c <DHT22_read+0x1cc>)
+ 8001086:	f7ff ff5f 	bl	8000f48 <USART2_write_buffer>
+        return DATA_ERROR;
+ 800108a:	2301      	movs	r3, #1
+ 800108c:	e0c0      	b.n	8001210 <DHT22_read+0x1c0>
+    }
 
     if (data_ready)
- 800106e:	4b6a      	ldr	r3, [pc, #424]	; (8001218 <DHT22_read+0x1c4>)
- 8001070:	781b      	ldrb	r3, [r3, #0]
- 8001072:	b2db      	uxtb	r3, r3
- 8001074:	2b00      	cmp	r3, #0
- 8001076:	d052      	beq.n	800111e <DHT22_read+0xca>
+ 800108e:	4b64      	ldr	r3, [pc, #400]	; (8001220 <DHT22_read+0x1d0>)
+ 8001090:	781b      	ldrb	r3, [r3, #0]
+ 8001092:	b2db      	uxtb	r3, r3
+ 8001094:	2b00      	cmp	r3, #0
+ 8001096:	f000 80ba 	beq.w	800120e <DHT22_read+0x1be>
     {
     	EXTI->IMR &= ~EXTI_IMR_IM7;
- 8001078:	4a68      	ldr	r2, [pc, #416]	; (800121c <DHT22_read+0x1c8>)
- 800107a:	4b68      	ldr	r3, [pc, #416]	; (800121c <DHT22_read+0x1c8>)
- 800107c:	681b      	ldr	r3, [r3, #0]
- 800107e:	f023 0380 	bic.w	r3, r3, #128	; 0x80
- 8001082:	6013      	str	r3, [r2, #0]
+ 800109a:	4a5f      	ldr	r2, [pc, #380]	; (8001218 <DHT22_read+0x1c8>)
+ 800109c:	4b5e      	ldr	r3, [pc, #376]	; (8001218 <DHT22_read+0x1c8>)
+ 800109e:	681b      	ldr	r3, [r3, #0]
+ 80010a0:	f023 0380 	bic.w	r3, r3, #128	; 0x80
+ 80010a4:	6013      	str	r3, [r2, #0]
     	data_ready = 0;
- 8001084:	4b64      	ldr	r3, [pc, #400]	; (8001218 <DHT22_read+0x1c4>)
- 8001086:	2200      	movs	r2, #0
- 8001088:	701a      	strb	r2, [r3, #0]
+ 80010a6:	4b5e      	ldr	r3, [pc, #376]	; (8001220 <DHT22_read+0x1d0>)
+ 80010a8:	2200      	movs	r2, #0
+ 80010aa:	701a      	strb	r2, [r3, #0]
 
         for (int bit = 0; bit < 40; bit++)
- 800108a:	2300      	movs	r3, #0
- 800108c:	67bb      	str	r3, [r7, #120]	; 0x78
- 800108e:	e043      	b.n	8001118 <DHT22_read+0xc4>
+ 80010ac:	2300      	movs	r3, #0
+ 80010ae:	67bb      	str	r3, [r7, #120]	; 0x78
+ 80010b0:	e043      	b.n	800113a <DHT22_read+0xea>
         {
         	uint8_t buffer[100];
 
         	snprintf(buffer, 5, "%d", pulses[bit]);
- 8001090:	4a63      	ldr	r2, [pc, #396]	; (8001220 <DHT22_read+0x1cc>)
- 8001092:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 8001094:	4413      	add	r3, r2
- 8001096:	781b      	ldrb	r3, [r3, #0]
- 8001098:	b2db      	uxtb	r3, r3
- 800109a:	f107 0008 	add.w	r0, r7, #8
- 800109e:	4a61      	ldr	r2, [pc, #388]	; (8001224 <DHT22_read+0x1d0>)
- 80010a0:	2105      	movs	r1, #5
- 80010a2:	f000 fc0f 	bl	80018c4 <snprintf>
+ 80010b2:	4a5c      	ldr	r2, [pc, #368]	; (8001224 <DHT22_read+0x1d4>)
+ 80010b4:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 80010b6:	4413      	add	r3, r2
+ 80010b8:	781b      	ldrb	r3, [r3, #0]
+ 80010ba:	b2db      	uxtb	r3, r3
+ 80010bc:	f107 0008 	add.w	r0, r7, #8
+ 80010c0:	4a59      	ldr	r2, [pc, #356]	; (8001228 <DHT22_read+0x1d8>)
+ 80010c2:	2105      	movs	r1, #5
+ 80010c4:	f000 fbfe 	bl	80018c4 <snprintf>
         	USART2_write_buffer(buffer);
- 80010a6:	f107 0308 	add.w	r3, r7, #8
- 80010aa:	4618      	mov	r0, r3
- 80010ac:	f7ff ff4c 	bl	8000f48 <USART2_write_buffer>
+ 80010c8:	f107 0308 	add.w	r3, r7, #8
+ 80010cc:	4618      	mov	r0, r3
+ 80010ce:	f7ff ff3b 	bl	8000f48 <USART2_write_buffer>
 
             if (pulses[bit] > 25 && pulses[bit] < 30)
- 80010b0:	4a5b      	ldr	r2, [pc, #364]	; (8001220 <DHT22_read+0x1cc>)
- 80010b2:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 80010b4:	4413      	add	r3, r2
- 80010b6:	781b      	ldrb	r3, [r3, #0]
- 80010b8:	b2db      	uxtb	r3, r3
- 80010ba:	2b19      	cmp	r3, #25
- 80010bc:	d90c      	bls.n	80010d8 <DHT22_read+0x84>
- 80010be:	4a58      	ldr	r2, [pc, #352]	; (8001220 <DHT22_read+0x1cc>)
- 80010c0:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 80010c2:	4413      	add	r3, r2
- 80010c4:	781b      	ldrb	r3, [r3, #0]
- 80010c6:	b2db      	uxtb	r3, r3
- 80010c8:	2b1d      	cmp	r3, #29
- 80010ca:	d805      	bhi.n	80010d8 <DHT22_read+0x84>
+ 80010d2:	4a54      	ldr	r2, [pc, #336]	; (8001224 <DHT22_read+0x1d4>)
+ 80010d4:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 80010d6:	4413      	add	r3, r2
+ 80010d8:	781b      	ldrb	r3, [r3, #0]
+ 80010da:	b2db      	uxtb	r3, r3
+ 80010dc:	2b19      	cmp	r3, #25
+ 80010de:	d90c      	bls.n	80010fa <DHT22_read+0xaa>
+ 80010e0:	4a50      	ldr	r2, [pc, #320]	; (8001224 <DHT22_read+0x1d4>)
+ 80010e2:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 80010e4:	4413      	add	r3, r2
+ 80010e6:	781b      	ldrb	r3, [r3, #0]
+ 80010e8:	b2db      	uxtb	r3, r3
+ 80010ea:	2b1d      	cmp	r3, #29
+ 80010ec:	d805      	bhi.n	80010fa <DHT22_read+0xaa>
             {
             	current_byte = (current_byte << 1) | 0;
- 80010cc:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
- 80010d0:	005b      	lsls	r3, r3, #1
- 80010d2:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
- 80010d6:	e008      	b.n	80010ea <DHT22_read+0x96>
+ 80010ee:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
+ 80010f2:	005b      	lsls	r3, r3, #1
+ 80010f4:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
+ 80010f8:	e008      	b.n	800110c <DHT22_read+0xbc>
             	//USART2_write('0');
             }
 
             else
             {
             	current_byte = (current_byte << 1) | 1;
- 80010d8:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
- 80010dc:	005b      	lsls	r3, r3, #1
- 80010de:	b25b      	sxtb	r3, r3
- 80010e0:	f043 0301 	orr.w	r3, r3, #1
- 80010e4:	b25b      	sxtb	r3, r3
- 80010e6:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
+ 80010fa:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
+ 80010fe:	005b      	lsls	r3, r3, #1
+ 8001100:	b25b      	sxtb	r3, r3
+ 8001102:	f043 0301 	orr.w	r3, r3, #1
+ 8001106:	b25b      	sxtb	r3, r3
+ 8001108:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
             	//USART2_write('1');
             }
 
             if (!(bit & 7))
- 80010ea:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 80010ec:	f003 0307 	and.w	r3, r3, #7
- 80010f0:	2b00      	cmp	r3, #0
- 80010f2:	d10e      	bne.n	8001112 <DHT22_read+0xbe>
+ 800110c:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 800110e:	f003 0307 	and.w	r3, r3, #7
+ 8001112:	2b00      	cmp	r3, #0
+ 8001114:	d10e      	bne.n	8001134 <DHT22_read+0xe4>
             {
                 byte_list[(bit / 8)] = current_byte;
- 80010f4:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 80010f6:	2b00      	cmp	r3, #0
- 80010f8:	da00      	bge.n	80010fc <DHT22_read+0xa8>
- 80010fa:	3307      	adds	r3, #7
- 80010fc:	10db      	asrs	r3, r3, #3
- 80010fe:	f107 0280 	add.w	r2, r7, #128	; 0x80
- 8001102:	4413      	add	r3, r2
- 8001104:	f897 207f 	ldrb.w	r2, [r7, #127]	; 0x7f
- 8001108:	f803 2c14 	strb.w	r2, [r3, #-20]
+ 8001116:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 8001118:	2b00      	cmp	r3, #0
+ 800111a:	da00      	bge.n	800111e <DHT22_read+0xce>
+ 800111c:	3307      	adds	r3, #7
+ 800111e:	10db      	asrs	r3, r3, #3
+ 8001120:	f107 0280 	add.w	r2, r7, #128	; 0x80
+ 8001124:	4413      	add	r3, r2
+ 8001126:	f897 207f 	ldrb.w	r2, [r7, #127]	; 0x7f
+ 800112a:	f803 2c14 	strb.w	r2, [r3, #-20]
                 current_byte = 0;
- 800110c:	2300      	movs	r3, #0
- 800110e:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
+ 800112e:	2300      	movs	r3, #0
+ 8001130:	f887 307f 	strb.w	r3, [r7, #127]	; 0x7f
         for (int bit = 0; bit < 40; bit++)
- 8001112:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 8001114:	3301      	adds	r3, #1
- 8001116:	67bb      	str	r3, [r7, #120]	; 0x78
- 8001118:	6fbb      	ldr	r3, [r7, #120]	; 0x78
- 800111a:	2b27      	cmp	r3, #39	; 0x27
- 800111c:	ddb8      	ble.n	8001090 <DHT22_read+0x3c>
+ 8001134:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 8001136:	3301      	adds	r3, #1
+ 8001138:	67bb      	str	r3, [r7, #120]	; 0x78
+ 800113a:	6fbb      	ldr	r3, [r7, #120]	; 0x78
+ 800113c:	2b27      	cmp	r3, #39	; 0x27
+ 800113e:	ddb8      	ble.n	80010b2 <DHT22_read+0x62>
             }
         }
+
+		byte_list[4] = current_byte;
+ 8001140:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
+ 8001144:	f887 3070 	strb.w	r3, [r7, #112]	; 0x70
+
+		humidity_int = byte_list[0];
+ 8001148:	f897 306c 	ldrb.w	r3, [r7, #108]	; 0x6c
+ 800114c:	f887 3077 	strb.w	r3, [r7, #119]	; 0x77
+		humidity_dec = byte_list[1];
+ 8001150:	f897 306d 	ldrb.w	r3, [r7, #109]	; 0x6d
+ 8001154:	f887 3076 	strb.w	r3, [r7, #118]	; 0x76
+		temp_int = byte_list[2];
+ 8001158:	f897 306e 	ldrb.w	r3, [r7, #110]	; 0x6e
+ 800115c:	f887 3075 	strb.w	r3, [r7, #117]	; 0x75
+		temp_dec = byte_list[3];
+ 8001160:	f897 306f 	ldrb.w	r3, [r7, #111]	; 0x6f
+ 8001164:	f887 3074 	strb.w	r3, [r7, #116]	; 0x74
+		checksum = byte_list[4];
+ 8001168:	f897 3070 	ldrb.w	r3, [r7, #112]	; 0x70
+ 800116c:	f887 3073 	strb.w	r3, [r7, #115]	; 0x73
+
+		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+ 8001170:	f897 2077 	ldrb.w	r2, [r7, #119]	; 0x77
+ 8001174:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
+ 8001178:	4413      	add	r3, r2
+ 800117a:	b2da      	uxtb	r2, r3
+ 800117c:	f897 3075 	ldrb.w	r3, [r7, #117]	; 0x75
+ 8001180:	4413      	add	r3, r2
+ 8001182:	b2da      	uxtb	r2, r3
+ 8001184:	f897 3074 	ldrb.w	r3, [r7, #116]	; 0x74
+ 8001188:	4413      	add	r3, r2
+ 800118a:	f887 3072 	strb.w	r3, [r7, #114]	; 0x72
+		if (checksum != (expected_checksum & 0xFF))
+ 800118e:	f897 2073 	ldrb.w	r2, [r7, #115]	; 0x73
+ 8001192:	f897 3072 	ldrb.w	r3, [r7, #114]	; 0x72
+ 8001196:	429a      	cmp	r2, r3
+ 8001198:	d025      	beq.n	80011e6 <DHT22_read+0x196>
+		{
+			snprintf(buffer, buffer_size, "Checksum ERROR! %.2X and %.2X", expected_checksum, checksum);
+ 800119a:	6839      	ldr	r1, [r7, #0]
+ 800119c:	f897 2072 	ldrb.w	r2, [r7, #114]	; 0x72
+ 80011a0:	f897 3073 	ldrb.w	r3, [r7, #115]	; 0x73
+ 80011a4:	9300      	str	r3, [sp, #0]
+ 80011a6:	4613      	mov	r3, r2
+ 80011a8:	4a20      	ldr	r2, [pc, #128]	; (800122c <DHT22_read+0x1dc>)
+ 80011aa:	6878      	ldr	r0, [r7, #4]
+ 80011ac:	f000 fb8a 	bl	80018c4 <snprintf>
+			USART2_write_buffer(buffer);
+ 80011b0:	6878      	ldr	r0, [r7, #4]
+ 80011b2:	f7ff fec9 	bl	8000f48 <USART2_write_buffer>
+			snprintf(buffer, buffer_size, "%.2X, %.2X and %.2X, %.2X and %.2X", humidity_int, humidity_dec, temp_int, temp_dec, checksum);
+ 80011b6:	683c      	ldr	r4, [r7, #0]
+ 80011b8:	f897 5077 	ldrb.w	r5, [r7, #119]	; 0x77
+ 80011bc:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
+ 80011c0:	f897 2075 	ldrb.w	r2, [r7, #117]	; 0x75
+ 80011c4:	f897 1074 	ldrb.w	r1, [r7, #116]	; 0x74
+ 80011c8:	f897 0073 	ldrb.w	r0, [r7, #115]	; 0x73
+ 80011cc:	9003      	str	r0, [sp, #12]
+ 80011ce:	9102      	str	r1, [sp, #8]
+ 80011d0:	9201      	str	r2, [sp, #4]
+ 80011d2:	9300      	str	r3, [sp, #0]
+ 80011d4:	462b      	mov	r3, r5
+ 80011d6:	4a16      	ldr	r2, [pc, #88]	; (8001230 <DHT22_read+0x1e0>)
+ 80011d8:	4621      	mov	r1, r4
+ 80011da:	6878      	ldr	r0, [r7, #4]
+ 80011dc:	f000 fb72 	bl	80018c4 <snprintf>
+			USART2_write_buffer(buffer);
+ 80011e0:	6878      	ldr	r0, [r7, #4]
+ 80011e2:	f7ff feb1 	bl	8000f48 <USART2_write_buffer>
+		}
+
+		snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
+ 80011e6:	6838      	ldr	r0, [r7, #0]
+ 80011e8:	f897 4077 	ldrb.w	r4, [r7, #119]	; 0x77
+ 80011ec:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
+ 80011f0:	f897 2075 	ldrb.w	r2, [r7, #117]	; 0x75
+ 80011f4:	f897 1074 	ldrb.w	r1, [r7, #116]	; 0x74
+ 80011f8:	9102      	str	r1, [sp, #8]
+ 80011fa:	9201      	str	r2, [sp, #4]
+ 80011fc:	9300      	str	r3, [sp, #0]
+ 80011fe:	4623      	mov	r3, r4
+ 8001200:	4a0c      	ldr	r2, [pc, #48]	; (8001234 <DHT22_read+0x1e4>)
+ 8001202:	4601      	mov	r1, r0
+ 8001204:	6878      	ldr	r0, [r7, #4]
+ 8001206:	f000 fb5d 	bl	80018c4 <snprintf>
+
+		return DATA_NO_ERROR;
+ 800120a:	2300      	movs	r3, #0
+ 800120c:	e000      	b.n	8001210 <DHT22_read+0x1c0>
     }
 
-	EXTI->IMR &= ~EXTI_IMR_IM7;
- 800111e:	4a3f      	ldr	r2, [pc, #252]	; (800121c <DHT22_read+0x1c8>)
- 8001120:	4b3e      	ldr	r3, [pc, #248]	; (800121c <DHT22_read+0x1c8>)
- 8001122:	681b      	ldr	r3, [r3, #0]
- 8001124:	f023 0380 	bic.w	r3, r3, #128	; 0x80
- 8001128:	6013      	str	r3, [r2, #0]
-    DHT22_start();
- 800112a:	f000 f885 	bl	8001238 <DHT22_start>
-
-    if (DHT22_wait_response())
- 800112e:	f000 f89f 	bl	8001270 <DHT22_wait_response>
- 8001132:	4603      	mov	r3, r0
- 8001134:	2b00      	cmp	r3, #0
- 8001136:	d004      	beq.n	8001142 <DHT22_read+0xee>
-    {
-        USART2_write_buffer("DHT22 Not ready to send data!");
- 8001138:	483b      	ldr	r0, [pc, #236]	; (8001228 <DHT22_read+0x1d4>)
- 800113a:	f7ff ff05 	bl	8000f48 <USART2_write_buffer>
-        return DATA_ERROR;
- 800113e:	2301      	movs	r3, #1
- 8001140:	e065      	b.n	800120e <DHT22_read+0x1ba>
-    }
-
-    byte_list[4] = current_byte;
- 8001142:	f897 307f 	ldrb.w	r3, [r7, #127]	; 0x7f
- 8001146:	f887 3070 	strb.w	r3, [r7, #112]	; 0x70
-
-    humidity_int = byte_list[0];
- 800114a:	f897 306c 	ldrb.w	r3, [r7, #108]	; 0x6c
- 800114e:	f887 3077 	strb.w	r3, [r7, #119]	; 0x77
-    humidity_dec = byte_list[1];
- 8001152:	f897 306d 	ldrb.w	r3, [r7, #109]	; 0x6d
- 8001156:	f887 3076 	strb.w	r3, [r7, #118]	; 0x76
-    temp_int = byte_list[2];
- 800115a:	f897 306e 	ldrb.w	r3, [r7, #110]	; 0x6e
- 800115e:	f887 3075 	strb.w	r3, [r7, #117]	; 0x75
-    temp_dec = byte_list[3];
- 8001162:	f897 306f 	ldrb.w	r3, [r7, #111]	; 0x6f
- 8001166:	f887 3074 	strb.w	r3, [r7, #116]	; 0x74
-    checksum = byte_list[4];
- 800116a:	f897 3070 	ldrb.w	r3, [r7, #112]	; 0x70
- 800116e:	f887 3073 	strb.w	r3, [r7, #115]	; 0x73
-
-    uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
- 8001172:	f897 2077 	ldrb.w	r2, [r7, #119]	; 0x77
- 8001176:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
- 800117a:	4413      	add	r3, r2
- 800117c:	b2da      	uxtb	r2, r3
- 800117e:	f897 3075 	ldrb.w	r3, [r7, #117]	; 0x75
- 8001182:	4413      	add	r3, r2
- 8001184:	b2da      	uxtb	r2, r3
- 8001186:	f897 3074 	ldrb.w	r3, [r7, #116]	; 0x74
- 800118a:	4413      	add	r3, r2
- 800118c:	f887 3072 	strb.w	r3, [r7, #114]	; 0x72
-    if (checksum != (expected_checksum & 0xFF))
- 8001190:	f897 2073 	ldrb.w	r2, [r7, #115]	; 0x73
- 8001194:	f897 3072 	ldrb.w	r3, [r7, #114]	; 0x72
- 8001198:	429a      	cmp	r2, r3
- 800119a:	d025      	beq.n	80011e8 <DHT22_read+0x194>
-    {
-        snprintf(buffer, buffer_size, "Checksum ERROR! %.2X and %.2X", expected_checksum, checksum);
- 800119c:	6839      	ldr	r1, [r7, #0]
- 800119e:	f897 2072 	ldrb.w	r2, [r7, #114]	; 0x72
- 80011a2:	f897 3073 	ldrb.w	r3, [r7, #115]	; 0x73
- 80011a6:	9300      	str	r3, [sp, #0]
- 80011a8:	4613      	mov	r3, r2
- 80011aa:	4a20      	ldr	r2, [pc, #128]	; (800122c <DHT22_read+0x1d8>)
- 80011ac:	6878      	ldr	r0, [r7, #4]
- 80011ae:	f000 fb89 	bl	80018c4 <snprintf>
-        USART2_write_buffer(buffer);
- 80011b2:	6878      	ldr	r0, [r7, #4]
- 80011b4:	f7ff fec8 	bl	8000f48 <USART2_write_buffer>
-        snprintf(buffer, buffer_size, "%.2X, %.2X and %.2X, %.2X and %.2X", humidity_int, humidity_dec, temp_int, temp_dec, checksum);
- 80011b8:	683c      	ldr	r4, [r7, #0]
- 80011ba:	f897 5077 	ldrb.w	r5, [r7, #119]	; 0x77
- 80011be:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
- 80011c2:	f897 2075 	ldrb.w	r2, [r7, #117]	; 0x75
- 80011c6:	f897 1074 	ldrb.w	r1, [r7, #116]	; 0x74
- 80011ca:	f897 0073 	ldrb.w	r0, [r7, #115]	; 0x73
- 80011ce:	9003      	str	r0, [sp, #12]
- 80011d0:	9102      	str	r1, [sp, #8]
- 80011d2:	9201      	str	r2, [sp, #4]
- 80011d4:	9300      	str	r3, [sp, #0]
- 80011d6:	462b      	mov	r3, r5
- 80011d8:	4a15      	ldr	r2, [pc, #84]	; (8001230 <DHT22_read+0x1dc>)
- 80011da:	4621      	mov	r1, r4
- 80011dc:	6878      	ldr	r0, [r7, #4]
- 80011de:	f000 fb71 	bl	80018c4 <snprintf>
-        USART2_write_buffer(buffer);
- 80011e2:	6878      	ldr	r0, [r7, #4]
- 80011e4:	f7ff feb0 	bl	8000f48 <USART2_write_buffer>
-    }
-
-	snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
- 80011e8:	6838      	ldr	r0, [r7, #0]
- 80011ea:	f897 4077 	ldrb.w	r4, [r7, #119]	; 0x77
- 80011ee:	f897 3076 	ldrb.w	r3, [r7, #118]	; 0x76
- 80011f2:	f897 2075 	ldrb.w	r2, [r7, #117]	; 0x75
- 80011f6:	f897 1074 	ldrb.w	r1, [r7, #116]	; 0x74
- 80011fa:	9102      	str	r1, [sp, #8]
- 80011fc:	9201      	str	r2, [sp, #4]
- 80011fe:	9300      	str	r3, [sp, #0]
- 8001200:	4623      	mov	r3, r4
- 8001202:	4a0c      	ldr	r2, [pc, #48]	; (8001234 <DHT22_read+0x1e0>)
- 8001204:	4601      	mov	r1, r0
- 8001206:	6878      	ldr	r0, [r7, #4]
- 8001208:	f000 fb5c 	bl	80018c4 <snprintf>
-
-    return DATA_NO_ERROR;
- 800120c:	2300      	movs	r3, #0
+    return DATA_NOT_READY;
+ 800120e:	2302      	movs	r3, #2
 }
- 800120e:	4618      	mov	r0, r3
- 8001210:	3780      	adds	r7, #128	; 0x80
- 8001212:	46bd      	mov	sp, r7
- 8001214:	bdb0      	pop	{r4, r5, r7, pc}
- 8001216:	bf00      	nop
- 8001218:	200006bc 	.word	0x200006bc
- 800121c:	40010400 	.word	0x40010400
- 8001220:	20000694 	.word	0x20000694
- 8001224:	08004700 	.word	0x08004700
- 8001228:	08004704 	.word	0x08004704
+ 8001210:	4618      	mov	r0, r3
+ 8001212:	3780      	adds	r7, #128	; 0x80
+ 8001214:	46bd      	mov	sp, r7
+ 8001216:	bdb0      	pop	{r4, r5, r7, pc}
+ 8001218:	40010400 	.word	0x40010400
+ 800121c:	08004700 	.word	0x08004700
+ 8001220:	200006bc 	.word	0x200006bc
+ 8001224:	20000694 	.word	0x20000694
+ 8001228:	08004720 	.word	0x08004720
  800122c:	08004724 	.word	0x08004724
  8001230:	08004744 	.word	0x08004744
  8001234:	08004768 	.word	0x08004768
@@ -2480,7 +2480,7 @@ int main(void)
  800161a:	1d3b      	adds	r3, r7, #4
  800161c:	2132      	movs	r1, #50	; 0x32
  800161e:	4618      	mov	r0, r3
- 8001620:	f7ff fd18 	bl	8001054 <DHT22_read>
+ 8001620:	f7ff fd16 	bl	8001050 <DHT22_read>
  8001624:	4603      	mov	r3, r0
  8001626:	2b00      	cmp	r3, #0
  8001628:	d103      	bne.n	8001632 <main+0x42>

@@ -36,8 +36,6 @@ void DHT22_SWITCH_MODE_INPUT()
 
 void DHT22_init()
 {
-    DHT22_SWITCH_MODE_OUTPUT();
-
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
     SYSCFG->EXTICR[1] &= ~SYSCFG_EXTICR2_EXTI7_PA;
     SYSCFG->EXTICR[1] |= SYSCFG_EXTICR2_EXTI7_PA;
@@ -54,6 +52,15 @@ int DHT22_read(char *buffer, int buffer_size)
     uint8_t humidity_int, humidity_dec, temp_int, temp_dec, checksum;
     uint8_t current_byte = 0;
     uint8_t byte_list[5] = {0};
+
+	EXTI->IMR &= ~EXTI_IMR_IM7;
+    DHT22_start();
+
+    if (DHT22_wait_response())
+    {
+        USART2_write_buffer("DHT22 Not ready to send data!");
+        return DATA_ERROR;
+    }
 
     if (data_ready)
     {
@@ -85,37 +92,30 @@ int DHT22_read(char *buffer, int buffer_size)
                 current_byte = 0;
             }
         }
+
+		byte_list[4] = current_byte;
+
+		humidity_int = byte_list[0];
+		humidity_dec = byte_list[1];
+		temp_int = byte_list[2];
+		temp_dec = byte_list[3];
+		checksum = byte_list[4];
+
+		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+		if (checksum != (expected_checksum & 0xFF))
+		{
+			snprintf(buffer, buffer_size, "Checksum ERROR! %.2X and %.2X", expected_checksum, checksum);
+			USART2_write_buffer(buffer);
+			snprintf(buffer, buffer_size, "%.2X, %.2X and %.2X, %.2X and %.2X", humidity_int, humidity_dec, temp_int, temp_dec, checksum);
+			USART2_write_buffer(buffer);
+		}
+
+		snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
+
+		return DATA_NO_ERROR;
     }
 
-	EXTI->IMR &= ~EXTI_IMR_IM7;
-    DHT22_start();
-
-    if (DHT22_wait_response())
-    {
-        USART2_write_buffer("DHT22 Not ready to send data!");
-        return DATA_ERROR;
-    }
-
-    byte_list[4] = current_byte;
-
-    humidity_int = byte_list[0];
-    humidity_dec = byte_list[1];
-    temp_int = byte_list[2];
-    temp_dec = byte_list[3];
-    checksum = byte_list[4];
-
-    uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
-    if (checksum != (expected_checksum & 0xFF))
-    {
-        snprintf(buffer, buffer_size, "Checksum ERROR! %.2X and %.2X", expected_checksum, checksum);
-        USART2_write_buffer(buffer);
-        snprintf(buffer, buffer_size, "%.2X, %.2X and %.2X, %.2X and %.2X", humidity_int, humidity_dec, temp_int, temp_dec, checksum);
-        USART2_write_buffer(buffer);
-    }
-
-	snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
-
-    return DATA_NO_ERROR;
+    return DATA_NOT_READY;
 }
 
 void DHT22_start()
