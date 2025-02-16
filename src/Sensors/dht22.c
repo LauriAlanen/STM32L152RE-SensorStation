@@ -47,7 +47,6 @@ void DHT22_init()
 
 int DHT22_read(char *buffer, int buffer_size)
 {
-    uint8_t humidity_int, humidity_dec, temp_int, temp_dec, checksum;
     uint8_t current_byte = 0;
     uint8_t byte_list[5] = {0};
 
@@ -80,50 +79,29 @@ int DHT22_read(char *buffer, int buffer_size)
 	    EXTI->IMR &= ~EXTI_IMR_MR7;
     	dht_status = DHT_NOT_READY;
 
-        for (int bit = 1; bit < BIT_COUNT; bit++)
-        {
-        	uint8_t buffer[100];
+    	DHT22_decode_pulses(pulses, byte_list);
 
-            if (pulses[bit] > 20 && pulses[bit] < 32)
-            {
-            	current_byte = (current_byte << 1) | 0;
-            	USART2_write('0');
-            }
-
-            else
-            {
-            	current_byte = (current_byte << 1) | 1;
-            	USART2_write('1');
-            }
-
-        	snprintf(buffer, 50, " Pulse widht is : %d", pulses[bit]);
-        	USART2_write_buffer(buffer);
-
-            if ((bit % 8) == 7)
-            {
-                byte_list[(bit / 8)] = current_byte;
-                current_byte = 0;
-            }
-        }
-
-		byte_list[4] = current_byte;
-
-		humidity_int = byte_list[0];
-		humidity_dec = byte_list[1];
-		temp_int = byte_list[2];
-		temp_dec = byte_list[3];
-		checksum = byte_list[4];
-
-		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
-		if (checksum != (expected_checksum & 0xFF))
+		snprintf(buffer, buffer_size, "%\n");
+		USART2_write_buffer(buffer);
+		for (int i = 0; i < 5; ++i)
 		{
-			snprintf(buffer, buffer_size, "Checksum ERROR! %.2X and %.2X", expected_checksum, checksum);
-			USART2_write_buffer(buffer);
-			snprintf(buffer, buffer_size, "%.2X, %.2X and %.2X, %.2X and %.2X", humidity_int, humidity_dec, temp_int, temp_dec, checksum);
+			snprintf(buffer, buffer_size, "%.2X", byte_list[i]);
 			USART2_write_buffer(buffer);
 		}
 
-		snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
+		uint8_t humidity_int = byte_list[0];
+		uint8_t humidity_dec = byte_list[1];
+		uint8_t temp_int = byte_list[2];
+		uint8_t temp_dec = byte_list[3];
+		uint8_t checksum = byte_list[4];
+
+		uint16_t humidity = (humidity_int << 8) | humidity_dec;
+		uint16_t temperature = (temp_int << 8) | temp_dec;
+	    if (temp_int & 0x80) temperature = -temperature;
+
+		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+
+		snprintf(buffer, buffer_size, "Humidity %d.%d and temperature %d.%d", humidity / 10, humidity % 10, temperature / 10, temperature % 10);
 
 		return DHT_READY;
     }
@@ -178,6 +156,32 @@ int DHT22_wait_response()
 
     return 0;
 }
+
+void DHT22_decode_pulses(uint8_t *pulses, uint8_t *byte_list)
+{
+    uint8_t current_byte = 0;
+
+    for (int bit = 1; bit <= BIT_COUNT; bit++)  // Fix: Use '<=' to capture all 40 bits
+    {
+        if (pulses[bit] > 20 && pulses[bit] < 32)
+        {
+            current_byte = (current_byte << 1) | 0;
+            USART2_write('0');
+        }
+        else
+        {
+            current_byte = (current_byte << 1) | 1;
+            USART2_write('1');
+        }
+
+        if ((bit % 8) == 0)  // Fix: Store byte correctly after every 8 bits
+        {
+            byte_list[(bit / 8) - 1] = current_byte;
+            current_byte = 0;
+        }
+    }
+}
+
 
 void DHT22_IRQHandler()
 {
