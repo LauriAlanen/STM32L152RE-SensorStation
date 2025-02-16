@@ -9,19 +9,17 @@
 #define TIMEOUT_50_US 1600
 #define TIMEOUT_28_US 896
 
-#define BIT_COUNT 40
+#define BIT_COUNT 41
 
-#define DATA_MEASURING 3
-#define DATA_NOT_READY 2
-#define DATA_ERROR 1
-#define DATA_NO_ERROR 0
+#define DHT_MEASURING 3
+#define DHT_NOT_READY 2
+#define DHT_ERROR 1
+#define DHT_READY 0
 
-#define SET_SYNC 1
-#define SYNCHRONIZED 0
-
-static volatile uint8_t synchronize = SET_SYNC;
 static volatile uint8_t pulses[BIT_COUNT];
-static volatile uint8_t data_ready = 0;
+static volatile uint8_t dht_status = 0;
+static uint8_t skip_bits = 0;
+
 
 void DHT22_SWITCH_MODE_OUTPUT()
 {
@@ -53,40 +51,55 @@ int DHT22_read(char *buffer, int buffer_size)
     uint8_t current_byte = 0;
     uint8_t byte_list[5] = {0};
 
-	EXTI->IMR &= ~EXTI_IMR_IM7;
     DHT22_start();
 
     if (DHT22_wait_response())
     {
         USART2_write_buffer("DHT22 Not ready to send data!");
-        return DATA_ERROR;
+        return DHT_ERROR;
     }
 
-    if (data_ready)
-    {
-    	EXTI->IMR &= ~EXTI_IMR_IM7;
-    	data_ready = 0;
+    SysTick->LOAD = TIMEOUT_20_MS - 1; // Set maximum allowable wait time
+	SysTick->VAL = 0;
+	SysTick->CTRL = 5;
 
-        for (int bit = 0; bit < 40; bit++)
+    // Wait for data
+    while(dht_status == DHT_MEASURING)
+    {
+        if ((SysTick->CTRL) & 0x10000)
+        {
+    		USART2_write_buffer("DHT22 measurement error :/");
+            return DHT_ERROR;
+        }
+    }
+
+	SysTick->CTRL = 0;
+
+    if (dht_status == DHT_READY)
+    {
+	    EXTI->IMR &= ~EXTI_IMR_MR7;
+    	dht_status = DHT_NOT_READY;
+
+        for (int bit = 1; bit < BIT_COUNT; bit++)
         {
         	uint8_t buffer[100];
 
-        	snprintf(buffer, 5, "%d", pulses[bit]);
-        	USART2_write_buffer(buffer);
-
-            if (pulses[bit] > 25 && pulses[bit] < 30)
+            if (pulses[bit] > 20 && pulses[bit] < 32)
             {
             	current_byte = (current_byte << 1) | 0;
-            	//USART2_write('0');
+            	USART2_write('0');
             }
 
             else
             {
             	current_byte = (current_byte << 1) | 1;
-            	//USART2_write('1');
+            	USART2_write('1');
             }
 
-            if (!(bit & 7))
+        	snprintf(buffer, 50, " Pulse widht is : %d", pulses[bit]);
+        	USART2_write_buffer(buffer);
+
+            if ((bit % 8) == 7)
             {
                 byte_list[(bit / 8)] = current_byte;
                 current_byte = 0;
@@ -112,15 +125,16 @@ int DHT22_read(char *buffer, int buffer_size)
 
 		snprintf(buffer, buffer_size, "Humidity %d,%d and Temperature %d,%d\n", humidity_int, humidity_dec, temp_int, temp_dec);
 
-		return DATA_NO_ERROR;
+		return DHT_READY;
     }
 
-    return DATA_NOT_READY;
+    return DHT_ERROR;
 }
 
 void DHT22_start()
 {
-	// MCU PULL LOW ~20ms
+    EXTI->IMR &= ~EXTI_IMR_MR7;
+    // MCU PULL LOW ~20ms
     DHT22_SWITCH_MODE_OUTPUT();
     GPIOA->ODR &= ~GPIO_ODR_ODR_7;
     delay_ms(20);
@@ -133,10 +147,6 @@ void DHT22_start()
 
 int DHT22_wait_response()
 {
-    // Here we tell that we need to synchronize the TICK we use the first 2 pulses of dht22 as a reference
-    EXTI->IMR |= EXTI_IMR_MR7;
-    synchronize = SET_SYNC;
-
     SysTick->LOAD = TIMEOUT_90_US - 1; // Set maximum allowable wait time
 	SysTick->VAL = 0;
 	SysTick->CTRL = 5;
@@ -146,10 +156,11 @@ int DHT22_wait_response()
         if ((SysTick->CTRL) & 0x10000)
         {
     		USART2_write_buffer("Timeout error when waiting for DHT22 response PULL LOW");
-            return 1;
+            return DHT_ERROR;
         }
     }
 
+    EXTI->IMR |= EXTI_IMR_MR7;
 
     SysTick->LOAD = TIMEOUT_90_US - 1; // Set maximum allowable wait time 85µs
 	SysTick->VAL = 0;
@@ -159,7 +170,7 @@ int DHT22_wait_response()
         if ((SysTick->CTRL) & 0x10000)
         {
     		USART2_write_buffer("Timeout error when waiting for DHT22 response GET READY");
-            return 1;
+            return DHT_ERROR;
         }
     }
 
@@ -176,21 +187,15 @@ void DHT22_IRQHandler()
 	uint16_t pulse_width;
 	//uint16_t pulse_width = now - last_time;
 
-	// Synchronization guard (The idea is just to set get a valid value for last_time)
-	if (synchronize != SYNCHRONIZED)
-	{
-		synchronize--;
-		EXTI->PR = EXTI_PR_PR7;
-		return;
-	}
+	dht_status = DHT_MEASURING;
 
-	if (GPIOA->IDR & GPIO_IDR_IDR_7)
+	if (GPIOA->IDR & GPIO_IDR_IDR_7) // Rising edge
 	{
 		last_time = now;
 		GPIOA->ODR |= GPIO_ODR_ODR_5;
 	}
 
-	else
+	else // Falling edge
 	{
 		pulse_width = (now >= last_time) ? (now - last_time) : (0xFFFF - last_time + now);
 		pulses[index] = pulse_width;
@@ -198,10 +203,10 @@ void DHT22_IRQHandler()
 		GPIOA->ODR &= ~GPIO_ODR_ODR_5;
 	}
 
-	if (index >= BIT_COUNT + 1)
+	if (index >= BIT_COUNT)
 	{
-		data_ready = 1;
 		index = 0;
+		dht_status = DHT_READY;
 	}
 
 	EXTI->PR = EXTI_PR_PR7;
