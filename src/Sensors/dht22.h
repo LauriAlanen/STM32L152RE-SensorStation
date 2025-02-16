@@ -18,6 +18,6 @@ void DHT22_start();
 int DHT22_wait_response();
 int DHT22_read_response(uint8_t *data);
 void DHT22_IRQHandler();
-void DHT22_decode_pulses(uint8_t *pulses, uint8_t *byte_list);
+void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list);
 
 #endif /* SENSORS_DHT22_H_ */

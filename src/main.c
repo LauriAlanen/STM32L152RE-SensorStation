@@ -51,7 +51,7 @@ int main(void)
 		}
 
 		//GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
-		delay_ms(5000);
+		delay_ms(1000);
 	}
 	return 0;
 }

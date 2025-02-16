@@ -81,14 +81,6 @@ int DHT22_read(char *buffer, int buffer_size)
 
     	DHT22_decode_pulses(pulses, byte_list);
 
-		snprintf(buffer, buffer_size, "%\n");
-		USART2_write_buffer(buffer);
-		for (int i = 0; i < 5; ++i)
-		{
-			snprintf(buffer, buffer_size, "%.2X", byte_list[i]);
-			USART2_write_buffer(buffer);
-		}
-
 		uint8_t humidity_int = byte_list[0];
 		uint8_t humidity_dec = byte_list[1];
 		uint8_t temp_int = byte_list[2];
@@ -100,6 +92,11 @@ int DHT22_read(char *buffer, int buffer_size)
 	    if (temp_int & 0x80) temperature = -temperature;
 
 		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+		if (expected_checksum != checksum)
+		{
+			snprintf(buffer, buffer_size, "Invalind checksum expected %.2X got %.2X", expected_checksum, checksum);
+			USART2_write_buffer(buffer);
+		}
 
 		snprintf(buffer, buffer_size, "Humidity %d.%d and temperature %d.%d", humidity / 10, humidity % 10, temperature / 10, temperature % 10);
 
@@ -157,7 +154,7 @@ int DHT22_wait_response()
     return 0;
 }
 
-void DHT22_decode_pulses(uint8_t *pulses, uint8_t *byte_list)
+void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
 {
     uint8_t current_byte = 0;
 
@@ -166,12 +163,10 @@ void DHT22_decode_pulses(uint8_t *pulses, uint8_t *byte_list)
         if (pulses[bit] > 20 && pulses[bit] < 32)
         {
             current_byte = (current_byte << 1) | 0;
-            USART2_write('0');
         }
         else
         {
             current_byte = (current_byte << 1) | 1;
-            USART2_write('1');
         }
 
         if ((bit % 8) == 0)  // Fix: Store byte correctly after every 8 bits
