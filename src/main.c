@@ -40,18 +40,22 @@ int main(void)
 	{
 		//GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
 
-		//LMT84LP_read(buffer, BUFFER_SIZE);
-		//USART2_write_buffer(buffer, BUFFER_SIZE);
+		//NSL19M51_Reading nsl19m51_reading;
+		//NSL19M51_read(&nsl19m51_reading);
+		//snprintf(buffer, 100, "NSL19M51 Lux %d.%d", nsl19m51_reading.lux_int, nsl19m51_reading.lux_dec);
+		//USART2_write_buffer(buffer);
 
-		//NSL19M51_read(buffer, BUFFER_SIZE);
-		//USART2_write_buffer(buffer, BUFFER_SIZE);
+		//LMT84LP_Reading lmt84lp_reading;
+		//LMT84LP_read(&lmt84lp_reading);
+		//snprintf(buffer, 100, "LMT84LP Temperature %d.%d", lmt84lp_reading.temperature_int, lmt84lp_reading.temperature_dec);
+		//USART2_write_buffer(buffer);
 
-		DHT22_Reading reading;
-		if(!(DHT22_read(&reading)))
+		DHT22_Reading dht22_reading;
+		if(!(DHT22_read(&dht22_reading)))
 		{
-			snprintf(buffer, 100, "Humidity %d.%d", reading.humidity_int, reading.humidity_dec);
+			snprintf(buffer, 100, "DHT22 Humidity %d.%d", dht22_reading.humidity_int, dht22_reading.humidity_dec);
 			USART2_write_buffer(buffer);
-			snprintf(buffer, 100, "Temperature %d.%d", reading.temperature_int, reading.temperature_dec);
+			snprintf(buffer, 100, "DHT22 Temperature %d.%d", dht22_reading.temperature_int, dht22_reading.temperature_dec);
 			USART2_write_buffer(buffer);
 		}
 

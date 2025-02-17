@@ -24,7 +24,7 @@ void LMT84LP_init()
 	GPIOA->MODER |= GPIO_MODER_MODER0;
 }
 
-void LMT84LP_read(char *buffer, int buffer_size)
+void LMT84LP_read(LMT84LP_Reading *reading)
 {
 	int adc_result = 0;
 
@@ -41,5 +41,7 @@ void LMT84LP_read(char *buffer, int buffer_size)
 	float voltage = ADC_STEP_SIZE_U * adc_result;
 	float temperature = ((voltage - U_MIN) / (U_MAX - U_MIN)) * (T_MAX - T_MIN) + T_MIN;
 
-	snprintf(buffer, buffer_size,"Temperature : %.2f && Voltage: %.2f" , temperature, voltage);
+	// Does this work?
+	reading->temperature_int = (uint8_t)temperature;
+	reading->temperature_dec = (uint8_t)((temperature - reading->temperature_int) * 100);
 }

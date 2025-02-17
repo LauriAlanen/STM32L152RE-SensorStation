@@ -10,7 +10,12 @@
 
 #include "stm32l1xx.h"
 
+typedef struct NSL19M51_Reading {
+	uint8_t lux_int;
+	uint8_t lux_dec;
+} NSL19M51_Reading;
+
 void NSL19M51_init();
-void NSL19M51_read(char *buffer, int buffer_size);
+void NSL19M51_read(NSL19M51_Reading *reading);
 
 #endif /* SENSORS_NSL19M51_H_ */

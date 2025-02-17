@@ -19,7 +19,7 @@ void NSL19M51_init()
 	GPIOA->MODER |= GPIO_MODER_MODER1;
 }
 
-void NSL19M51_read(char *buffer, int buffer_size)
+void NSL19M51_read(NSL19M51_Reading *reading)
 {
 	int adc_result = 0;
 
@@ -35,5 +35,7 @@ void NSL19M51_read(char *buffer, int buffer_size)
 
 	float voltage = ADC_STEP_SIZE_U * adc_result;
 	float lux = 1.9634f * exp(2.1281f * voltage);
-	snprintf(buffer, buffer_size,"Lux : %.2f && Voltage: %.2f" , lux, voltage);
+
+	reading->lux_int = (uint8_t)lux;
+	reading->lux_dec = (uint8_t)((lux - reading->lux_int) * 100);
 }
