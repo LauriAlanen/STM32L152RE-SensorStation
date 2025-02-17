@@ -10,6 +10,7 @@
 #include "gpio.h"
 #include "timing.h"
 #include "timers.h"
+#include <stdio.h>
 
 #define BUFFER_SIZE 50
 
@@ -45,8 +46,12 @@ int main(void)
 		//NSL19M51_read(buffer, BUFFER_SIZE);
 		//USART2_write_buffer(buffer, BUFFER_SIZE);
 
-		if(!(DHT22_read(buffer, BUFFER_SIZE)))
+		DHT22_Reading reading;
+		if(!(DHT22_read(&reading)))
 		{
+			snprintf(buffer, 100, "Humidity %d.%d", reading.humidity_int, reading.humidity_dec);
+			USART2_write_buffer(buffer);
+			snprintf(buffer, 100, "Temperature %d.%d", reading.temperature_int, reading.temperature_dec);
 			USART2_write_buffer(buffer);
 		}
 

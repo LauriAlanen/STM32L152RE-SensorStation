@@ -20,7 +20,6 @@ static volatile uint8_t pulses[BIT_COUNT];
 static volatile uint8_t dht_status = 0;
 static uint8_t skip_bits = 0;
 
-
 void DHT22_SWITCH_MODE_OUTPUT()
 {
 	GPIOA->MODER &= ~GPIO_MODER_MODER7;
@@ -45,10 +44,10 @@ void DHT22_init()
     NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
 
-int DHT22_read(char *buffer, int buffer_size)
+int DHT22_read(DHT22_Reading *reading)
 {
-    uint8_t current_byte = 0;
     uint8_t byte_list[5] = {0};
+    uint8_t buffer[100];
 
     DHT22_start();
 
@@ -83,22 +82,25 @@ int DHT22_read(char *buffer, int buffer_size)
 
 		uint8_t humidity_int = byte_list[0];
 		uint8_t humidity_dec = byte_list[1];
-		uint8_t temp_int = byte_list[2];
-		uint8_t temp_dec = byte_list[3];
+		uint8_t temperature_int = byte_list[2];
+		uint8_t temperature_dec = byte_list[3];
 		uint8_t checksum = byte_list[4];
 
 		uint16_t humidity = (humidity_int << 8) | humidity_dec;
-		uint16_t temperature = (temp_int << 8) | temp_dec;
-	    if (temp_int & 0x80) temperature = -temperature;
+		uint16_t temperature = (temperature_int << 8) | temperature_dec;
+	    if (temperature_int & 0x80) temperature = -temperature;
 
-		uint8_t expected_checksum = humidity_int + humidity_dec + temp_int + temp_dec;
+		uint8_t expected_checksum = humidity_int + humidity_dec + temperature_int + temperature_dec;
 		if (expected_checksum != checksum)
 		{
-			snprintf(buffer, buffer_size, "Invalind checksum expected %.2X got %.2X", expected_checksum, checksum);
+			snprintf(buffer, 100, "Invalid checksum expected %.2X got %.2X", expected_checksum, checksum);
 			USART2_write_buffer(buffer);
 		}
 
-		snprintf(buffer, buffer_size, "Humidity %d.%d and temperature %d.%d", humidity / 10, humidity % 10, temperature / 10, temperature % 10);
+		reading->humidity_int = humidity / 10;
+		reading->humidity_dec = humidity % 10;
+		reading->temperature_int = temperature / 10;
+		reading->temperature_dec = temperature % 10;
 
 		return DHT_READY;
     }
@@ -158,7 +160,7 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
 {
     uint8_t current_byte = 0;
 
-    for (int bit = 1; bit <= BIT_COUNT; bit++)  // Fix: Use '<=' to capture all 40 bits
+    for (int bit = 1; bit <= BIT_COUNT; bit++)
     {
         if (pulses[bit] > 20 && pulses[bit] < 32)
         {
@@ -169,7 +171,7 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
             current_byte = (current_byte << 1) | 1;
         }
 
-        if ((bit % 8) == 0)  // Fix: Store byte correctly after every 8 bits
+        if ((bit % 8) == 0)
         {
             byte_list[(bit / 8) - 1] = current_byte;
             current_byte = 0;
@@ -184,7 +186,6 @@ void DHT22_IRQHandler()
 	static uint16_t last_time = 0;
 	uint16_t now = TIM2->CNT;
 	uint16_t pulse_width;
-	//uint16_t pulse_width = now - last_time;
 
 	dht_status = DHT_MEASURING;
 

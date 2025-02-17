@@ -10,8 +10,15 @@
 
 #include "stm32l1xx.h"
 
+typedef struct DHT22_Reading {
+	uint8_t humidity_int;
+	uint8_t humidity_dec;
+	uint8_t temperature_int;
+	uint8_t temperature_dec;
+} DHT22_Reading;
+
 void DHT22_init();
-int DHT22_read(char *buffer, int buffer_size);
+int DHT22_read(DHT22_Reading *reading);
 uint8_t DHT22_read_byte();
 uint8_t DHT22_read_bit();
 void DHT22_start();
