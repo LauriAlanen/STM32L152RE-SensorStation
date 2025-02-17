@@ -10,6 +10,8 @@
 
 #include "stm32l1xx.h"
 
+#define NSL19M51_MODBUS_ADDRESS 0x4
+
 typedef struct NSL19M51_Reading {
 	uint8_t lux_int;
 	uint8_t lux_dec;

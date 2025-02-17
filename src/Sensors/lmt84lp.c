@@ -13,6 +13,8 @@
 // Mittaa l�mp�tilaa v�lilt� -50-150C. -50C --> 1299mV ja 150C --> 183mV
 // PIN PA0
 
+#define LMT84LP_MODBUS_ADDRESS 0x1
+
 #define T_MAX 150.0f
 #define T_MIN -50.0f
 #define U_MIN 1.299f

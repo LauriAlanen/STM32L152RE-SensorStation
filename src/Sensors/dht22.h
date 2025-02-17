@@ -10,6 +10,8 @@
 
 #include "stm32l1xx.h"
 
+#define DHT22_MODBUS_ADDRESS 0x6
+
 typedef struct DHT22_Reading {
 	uint8_t humidity_int;
 	uint8_t humidity_dec;

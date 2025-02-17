@@ -10,6 +10,7 @@
 #include "gpio.h"
 #include "timing.h"
 #include "timers.h"
+#include "modbus.h"
 #include <stdio.h>
 
 #define BUFFER_SIZE 50
