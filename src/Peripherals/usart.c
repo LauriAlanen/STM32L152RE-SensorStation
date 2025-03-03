@@ -24,6 +24,14 @@ void USART2_init()
 	NVIC_EnableIRQ(USART2_IRQn); 	//enable interrupt in NVIC
 }
 
+char USART2_read()
+{
+	char data=0;
+	//wait while RX buffer is data is ready to be read
+	while(!(USART2->SR&0x0020)){} 	//Bit 5 RXNE: Read data register not empty
+		data=USART2->DR;			//p739
+		return data;
+}
 
 void USART2_write(char data)
 {

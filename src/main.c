@@ -39,7 +39,8 @@ int main(void)
 
 	while (1)
 	{
-
+		MODBUS_ProcessFrame();
+		delay_ms(500);
 		//NSL19M51_Reading nsl19m51_reading;
 		//NSL19M51_read(&nsl19m51_reading);
 		//snprintf(buffer, 100, "NSL19M51 Lux %d.%d", nsl19m51_reading.lux_int, nsl19m51_reading.lux_dec);
