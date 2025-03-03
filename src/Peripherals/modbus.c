@@ -7,6 +7,8 @@
 
 #include "modbus.h"
 
+#define DEBUG 1
+
 uint8_t mFlag = 0;
 
 // Must be in the order of addresses from lower to higher
@@ -14,9 +16,9 @@ uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_AD
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
-unsigned short int CRC16(char *nData, unsigned short int wLength)
+uint16_t CRC16(char *nData, uint16_t wLength)
 {
-	static const unsigned short int wCRCTable[] = {
+	static const uint16_t wCRCTable[] = {
 		0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
 		0XC601, 0X06C0, 0X0780, 0XC741, 0X0500, 0XC5C1, 0XC481, 0X0440,
 		0XCC01, 0X0CC0, 0X0D80, 0XCD41, 0X0F00, 0XCFC1, 0XCE81, 0X0E40,
@@ -51,8 +53,8 @@ unsigned short int CRC16(char *nData, unsigned short int wLength)
 		0X8201, 0X42C0, 0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040
 	};
 
-	unsigned char nTemp;
-	unsigned short int wCRCWord = 0xFFFF;
+	uint8_t nTemp;
+	uint16_t wCRCWord = 0xFFFF;
 
 	while (wLength--)
 	{
@@ -96,6 +98,33 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 	}
 }
 
+uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
+{
+	uint16_t MODBUS_FrameCRC = 0;
+	uint8_t buffer[100];
+
+	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 2); // Exclude the CRC itself
+
+	uint8_t CRC_lsb = (MODBUS_FrameCRC >> 8) == MODBUS_Frame[MODBUS_FRAME_SIZE - 1];
+	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
+	if (CRC_lsb && CRC_msb)
+	{
+#if DEBUG == 1
+		snprintf(buffer, 20, "%s", "Valid CRC");
+		USART2_write_buffer(buffer);
+#endif
+		return 0;
+	}
+
+#if DEBUG == 1
+		snprintf(buffer, 50, "Invalid CRC expected %.2x%.2x got %.4X",
+				MODBUS_Frame[MODBUS_FRAME_SIZE - 1], MODBUS_Frame[MODBUS_FRAME_SIZE - 2], MODBUS_FrameCRC);
+		USART2_write_buffer(buffer);
+#endif
+	return 1;
+
+}
+
 void MODBUS_ProcessFrame(uint8_t *selected_slave)
 {
 	uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
@@ -107,7 +136,9 @@ void MODBUS_ProcessFrame(uint8_t *selected_slave)
 
 		MODBUS_Frame[0] = *selected_slave;
 		MODBUS_ReadFrame(MODBUS_Frame);
+		uint8_t error = MODBUS_VerifyCRC(MODBUS_Frame);
 
+#if DEBUG == 1
 		snprintf(buffer, 20, "%s", "Generated frame:");
 		USART2_write_buffer(buffer);
 		for (int i = 0; i < MODBUS_FRAME_SIZE; ++i)
@@ -115,7 +146,7 @@ void MODBUS_ProcessFrame(uint8_t *selected_slave)
 			snprintf(buffer, 4, "%.2x", MODBUS_Frame[i]);
 			USART2_write_buffer(buffer);
 		}
-
+#endif
 		mFlag = 2;
 		USART2->CR1 |= USART_CR1_RXNEIE;
 	}
@@ -123,9 +154,11 @@ void MODBUS_ProcessFrame(uint8_t *selected_slave)
 
 void MODBUS_DiscardFrame()
 {
+#if DEBUG == 1
     uint8_t buffer[100];
     snprintf(buffer, 20, "%s", "Purging frame");
     USART2_write_buffer(buffer);
+#endif
 
     // Clear all data
     while (USART2->SR & USART_SR_RXNE)
