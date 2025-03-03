@@ -22,7 +22,9 @@ extern uint8_t mFlag;
 
 unsigned short int CRC16(char *nData, unsigned short int wLength);
 void MODBUS_IRQHandler();
-void MODBUS_ProcessFrame();
-uint8_t MODBUS_CheckAdress(uint8_t *c);
+void MODBUS_ProcessFrame(uint8_t *selected_slave);
+void MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
+void MODBUS_DiscardFrame();
+uint8_t* MODBUS_CheckAdress(uint8_t *c);
 
 #endif /* PERIPHERALS_MODBUS_H_ */

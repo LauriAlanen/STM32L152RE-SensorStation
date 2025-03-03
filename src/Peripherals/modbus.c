@@ -11,7 +11,6 @@ uint8_t mFlag = 0;
 
 // Must be in the order of addresses from lower to higher
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
-uint8_t selected_slave = 0;
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
@@ -65,7 +64,7 @@ unsigned short int CRC16(char *nData, unsigned short int wLength)
 	return wCRCWord;
 }
 
-uint8_t MODBUS_CheckAdress(uint8_t *c)
+uint8_t* MODBUS_CheckAdress(uint8_t *c)
 {
 	for (int i = 0; i < SLAVE_COUNT; ++i)
 	{
@@ -74,7 +73,7 @@ uint8_t MODBUS_CheckAdress(uint8_t *c)
 			mFlag = 1;
 			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
 
-			return *c;
+			return c;
 		}
 	}
 
@@ -83,26 +82,31 @@ uint8_t MODBUS_CheckAdress(uint8_t *c)
 		GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
 	}
 
-	return 0;
+	return NULL;
 }
 
+void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
+{
+	uint8_t c = 0;
 
-void MODBUS_ProcessFrame()
+	for (uint8_t frame_index = 1; frame_index < MODBUS_FRAME_SIZE; ++frame_index)
+	{
+		c = USART2_read();
+		MODBUS_Frame[frame_index] = c;
+	}
+}
+
+void MODBUS_ProcessFrame(uint8_t *selected_slave)
 {
 	uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
 	uint8_t buffer[100];
-	uint8_t c = 0;
 
 	if (mFlag == 1)
 	{
-		USART2->CR1 &= ~USART_CR1_RXNEIE;			//enable RX interrupt
-		MODBUS_Frame[0] = selected_slave;
+		USART2->CR1 &= ~USART_CR1_RXNEIE;			//disable RX interrupt
 
-		for (uint8_t frame_index = 1; frame_index < MODBUS_FRAME_SIZE; ++frame_index)
-		{
-			c = USART2_read();
-			MODBUS_Frame[frame_index] = c;
-		}
+		MODBUS_Frame[0] = *selected_slave;
+		MODBUS_ReadFrame(MODBUS_Frame);
 
 		snprintf(buffer, 20, "%s", "Generated frame:");
 		USART2_write_buffer(buffer);
@@ -111,20 +115,41 @@ void MODBUS_ProcessFrame()
 			snprintf(buffer, 4, "%.2x", MODBUS_Frame[i]);
 			USART2_write_buffer(buffer);
 		}
+
+		mFlag = 2;
 		USART2->CR1 |= USART_CR1_RXNEIE;
 	}
+}
+
+void MODBUS_DiscardFrame()
+{
+    uint8_t buffer[100];
+    snprintf(buffer, 20, "%s", "Purging frame");
+    USART2_write_buffer(buffer);
+
+    // Clear all data
+    while (USART2->SR & USART_SR_RXNE)
+    {
+        volatile uint8_t c = USART2->DR; // Read the data register to clear the flag
+    }
 }
 
 void MODBUS_IRQHandler()
 {
 	uint8_t c = 0;
-	uint8_t buffer[100];
+	uint8_t *selected_slave;
 
-	if(USART2->SR & 0x0020)
+	if(USART2->SR & USART_SR_RXNE)
 	{
 		c = USART2->DR;
 		mFlag = 2;
 		selected_slave = MODBUS_CheckAdress(&c);
+		if (selected_slave == NULL)
+		{
+			MODBUS_DiscardFrame();
+		}
+
+		MODBUS_ProcessFrame(selected_slave);
 	}
 }
 
