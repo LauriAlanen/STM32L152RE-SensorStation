@@ -19,5 +19,6 @@ typedef struct NSL19M51_Reading {
 
 void NSL19M51_init();
 void NSL19M51_read(NSL19M51_Reading *reading);
+void NSL19M51_ModbusHandler();
 
 #endif /* SENSORS_NSL19M51_H_ */

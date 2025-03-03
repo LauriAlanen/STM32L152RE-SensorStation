@@ -179,6 +179,10 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
     }
 }
 
+void DHT22_ModbusHandler()
+{
+	return;
+}
 
 void DHT22_IRQHandler()
 {

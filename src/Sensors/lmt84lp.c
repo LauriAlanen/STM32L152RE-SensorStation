@@ -47,3 +47,8 @@ void LMT84LP_read(LMT84LP_Reading *reading)
 	reading->temperature_int = (uint8_t)temperature;
 	reading->temperature_dec = (uint8_t)((temperature - reading->temperature_int) * 100);
 }
+
+void LMT84LP_ModbusHander()
+{
+	return;
+}

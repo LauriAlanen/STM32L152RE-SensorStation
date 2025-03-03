@@ -10,6 +10,8 @@
 
 #include "stm32l1xx.h"
 
+#define LMT84LP_MODBUS_ADDRESS 0x01
+
 typedef struct LMT84LP_Reading {
 	uint8_t temperature_int;
 	uint8_t temperature_dec;
@@ -17,5 +19,6 @@ typedef struct LMT84LP_Reading {
 
 void LMT84LP_init();
 void LMT84LP_read(LMT84LP_Reading *reading);
+void LMT84LP_ModbusHander();
 
 #endif /* SENSORS_LMT84LP_H_ */

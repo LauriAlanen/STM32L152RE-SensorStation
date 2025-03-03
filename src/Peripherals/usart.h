@@ -8,6 +8,9 @@
 #ifndef PERIPHERALS_USART_H_
 #define PERIPHERALS_USART_H_
 
+#include "modbus.h"
+#include "stm32l1xx.h"
+
 void USART2_init();
 
 void USART2_write(char data);

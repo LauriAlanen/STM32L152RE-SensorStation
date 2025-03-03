@@ -39,3 +39,8 @@ void NSL19M51_read(NSL19M51_Reading *reading)
 	reading->lux_int = (uint8_t)lux;
 	reading->lux_dec = (uint8_t)((lux - reading->lux_int) * 100);
 }
+
+void NSL19M51_ModbusHandler()
+{
+	return;
+}

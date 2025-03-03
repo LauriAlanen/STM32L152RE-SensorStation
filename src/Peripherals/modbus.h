@@ -9,11 +9,18 @@
 #define PERIPHERALS_MODBUS_H_
 
 #include "stm32l1xx.h"
+#include "dht22.h"
+#include "lmt84lp.h"
+#include "nsl19m51.h"
+#include "usart.h"
 
-extern uint8_t mFlag = 0;
+#define SLAVE_COUNT 3
+#define MODBUS_FRAME_SIZE 7
+
+extern uint8_t mFlag;
 
 unsigned short int CRC16(char *nData, unsigned short int wLength);
-
 void MODBUS_IRQHandler();
+uint8_t MODBUS_CheckAdress(uint8_t *c);
 
 #endif /* PERIPHERALS_MODBUS_H_ */

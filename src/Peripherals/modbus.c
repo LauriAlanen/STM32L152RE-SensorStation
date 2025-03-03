@@ -7,6 +7,11 @@
 
 #include "modbus.h"
 
+uint8_t mFlag = 0;
+
+// Must be in the order of addresses from lower to higher
+uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
+
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
 unsigned short int CRC16(char *nData, unsigned short int wLength)
@@ -59,16 +64,48 @@ unsigned short int CRC16(char *nData, unsigned short int wLength)
 	return wCRCWord;
 }
 
+uint8_t MODBUS_CheckAdress(uint8_t *c)
+{
+	for (int i = 0; i < SLAVE_COUNT; ++i)
+	{
+		if (MODBUS_Slaves[i] == *c)
+		{
+			mFlag = 1;
+			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
+			break;
+		}
+	}
+
+	if (mFlag != 1)
+	{
+		GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
+		return 1;
+	}
+
+	return 0;
+}
+
 void MODBUS_IRQHandler()
 {
-	char c = 0;
+	uint8_t c = 0;
+	uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
+	static uint8_t frame_index = 0;
 
 	if(USART2->SR & 0x0020) 		//if data available in DR register. p737
 	{
-			c = USART2->DR;
-			USART2_write(c);
-			//USART_write('\n');
-			//USART_write('\r');
+		c = USART2->DR;
+
+		if (frame_index == 0)
+		{
+			mFlag = 0;
+			MODBUS_CheckAdress(&c);
+		}
+
+		//frame_index++;
+
+		//USART2_write(c);
+		//USART2_write('\n');
+		//USART2_write('\r');
 	}
 }
 

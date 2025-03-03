@@ -32,14 +32,13 @@ int main(void)
 	TIM2_Init();
 
 	// Sensor Initializations
-	LMT84LP_init();
-	NSL19M51_init();
-	DHT22_init();
-	ADC_init();
+	//LMT84LP_init();
+	//NSL19M51_init();
+	//DHT22_init();
+	//ADC_init();
 
 	while (1)
 	{
-		//GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
 
 		//NSL19M51_Reading nsl19m51_reading;
 		//NSL19M51_read(&nsl19m51_reading);
@@ -51,17 +50,14 @@ int main(void)
 		//snprintf(buffer, 100, "LMT84LP Temperature %d.%d", lmt84lp_reading.temperature_int, lmt84lp_reading.temperature_dec);
 		//USART2_write_buffer(buffer);
 
-		DHT22_Reading dht22_reading;
-		if(!(DHT22_read(&dht22_reading)))
-		{
-			snprintf(buffer, 100, "DHT22 Humidity %d.%d", dht22_reading.humidity_int, dht22_reading.humidity_dec);
-			USART2_write_buffer(buffer);
-			snprintf(buffer, 100, "DHT22 Temperature %d.%d", dht22_reading.temperature_int, dht22_reading.temperature_dec);
-			USART2_write_buffer(buffer);
-		}
-
-		//GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
-		delay_ms(1000);
+		//DHT22_Reading dht22_reading;
+		//if(!(DHT22_read(&dht22_reading)))
+		//{
+		//	snprintf(buffer, 100, "DHT22 Humidity %d.%d", dht22_reading.humidity_int, dht22_reading.humidity_dec);
+		//	USART2_write_buffer(buffer);
+		//	snprintf(buffer, 100, "DHT22 Temperature %d.%d", dht22_reading.temperature_int, dht22_reading.temperature_dec);
+		//	USART2_write_buffer(buffer);
+		//}
 	}
 	return 0;
 }

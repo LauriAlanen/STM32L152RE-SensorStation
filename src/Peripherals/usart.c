@@ -6,8 +6,6 @@
  */
 
 #include "usart.h"
-#include "modbus.h"
-#include "stm32l1xx.h"
 
 void USART2_init()
 {
@@ -18,7 +16,7 @@ void USART2_init()
 	GPIOA->MODER |= 0x00000020; 	//MODER2=PA2(TX) to mode 10=alternate function mode. p184
 	GPIOA->MODER |= 0x00000080; 	//MODER2=PA3(RX) to mode 10=alternate function mode. p184
 
-	USART2->BRR = 0x00000116;	//115200 BAUD and crystal 32MHz. p710, 116
+	USART2->BRR = 0x00000D05;	//9600 BAUD and crystal 32MHz. p710, 116
 	USART2->CR1 |= USART_CR1_TE;	//TE bit. p739-740. Enable transmit
 	USART2->CR1 |= USART_CR1_RE;	//RE bit. p739-740. Enable receiver
 	USART2->CR1 |= USART_CR1_UE;	//UE bit. p739-740. Uart enable
