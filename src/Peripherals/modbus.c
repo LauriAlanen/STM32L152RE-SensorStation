@@ -132,7 +132,7 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame)
 			break;
 
 		case DHT22_MODBUS_ADDRESS:
-			DHT22_ModbusHandler();
+			DHT22_ModbusHandler(); // Example request frame 0x06 0x04 0x00 0x01 0x00 0x01 0x61 0xBD
 			break;
 
 		default:
