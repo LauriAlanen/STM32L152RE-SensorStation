@@ -10,10 +10,16 @@
 #define DEBUG 1
 
 uint8_t mFlag = 0;
+uint8_t frame_ready = 0;
+
+// Ring buffer
+volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
+volatile uint8_t buffer_OVF = 0;
+volatile uint16_t rx_head = 0, rx_tail = 0;
 
 // Must be in the order of addresses from lower to higher
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
-static uint8_t selected_slave = 0;
+volatile uint8_t selected_slave = 0;
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
@@ -85,17 +91,6 @@ uint8_t MODBUS_CheckAdress(uint8_t c)
 	return NULL;
 }
 
-void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
-{
-	uint8_t c = 0;
-
-	for (uint8_t frame_index = 1; frame_index < MODBUS_FRAME_SIZE; ++frame_index)
-	{
-		c = USART2_read();
-		MODBUS_Frame[frame_index] = c;
-	}
-}
-
 uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 {
 	uint16_t MODBUS_FrameCRC = 0;
@@ -123,61 +118,91 @@ uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 
 }
 
-void MODBUS_ProcessFrame()
+void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
 {
-	uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-	uint8_t buffer[100];
+	static uint8_t frame_index = 0;
+	uint8_t byte;
 
-	USART2->CR1 &= ~USART_CR1_RXNEIE;			//disable RX interrupt
-	if (mFlag == 1)
-	{
-
-		MODBUS_Frame[0] = selected_slave;
-		MODBUS_ReadFrame(MODBUS_Frame);
-		uint8_t error = MODBUS_VerifyCRC(MODBUS_Frame);
-
-#if DEBUG == 1
-		snprintf(buffer, 20, "%s", "Generated frame:");
-		USART2_write_buffer(buffer);
-		for (int i = 0; i < MODBUS_FRAME_SIZE; ++i)
-		{
-			snprintf(buffer, 4, "%.2x", MODBUS_Frame[i]);
-			USART2_write_buffer(buffer);
-		}
-#endif
-	}
-
-	else if (mFlag == 2)
-	{
-		MODBUS_DiscardFrame();
-		GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
-	}
-
-	mFlag = 0; // Frame processed set back to "waiting" state
-	USART2->CR1 |= USART_CR1_RXNEIE;
-}
-
-void MODBUS_DiscardFrame()
-{
-#if DEBUG == 1
-    uint8_t buffer[100];
-    snprintf(buffer, 20, "%s", "Purging frame");
-    USART2_write_buffer(buffer);
-#endif
-
-    // Clear all data
-    while (USART2->SR & USART_SR_RXNE)
+    while (MODBUS_RingBufferRead(&byte) == 0)
     {
-        uint8_t c = USART2->DR;
+    	MODBUS_Frame[frame_index++] = byte;
+    	if (frame_index >= MODBUS_FRAME_SIZE)
+    	{
+    		frame_ready = 1;
+    		frame_index = 0;
+		}
     }
 }
 
+void MODBUS_ProcessFrame()
+{
+	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
+	uint8_t buffer[100];
+
+	MODBUS_BuildFrame(MODBUS_Frame);
+
+	if (frame_ready)
+	{
+		MODBUS_CheckAdress(MODBUS_Frame[0]);
+		if (mFlag == 1)
+		{
+			uint8_t error = MODBUS_VerifyCRC(MODBUS_Frame);
+
+#if DEBUG == 1
+			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
+			snprintf(buffer, 20, "%s", "Generated frame:");
+			USART2_write_buffer(buffer);
+			for (int i = 0; i < MODBUS_FRAME_SIZE; ++i)
+			{
+				snprintf(buffer, 4, "%.2x", MODBUS_Frame[i]);
+				USART2_write_buffer(buffer);
+			}
+#endif
+		}
+
+		else if (mFlag == 2)
+		{
+#if DEBUG == 1
+			GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
+			uint8_t buffer[100];
+			snprintf(buffer, 20, "%s", "Invalid address!");
+			USART2_write_buffer(buffer);
+#endif
+		}
+
+		frame_ready = 0;
+	}
+}
+
+uint8_t MODBUS_RingBufferRead(uint8_t *data)
+{
+    if (rx_tail == rx_head)
+    {
+        return -1;
+    }
+
+    *data = rx_buffer[rx_tail];
+    rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
+    return 0;
+}
+
+
 void MODBUS_IRQHandler()
 {
-    uint8_t c = 0;
     if (USART2->SR & USART_SR_RXNE)
     {
-        c = USART2->DR;
-        selected_slave = MODBUS_CheckAdress(c);
+        uint8_t data = USART2->DR;
+        uint16_t next_head = (rx_head + 1) % RX_BUFFER_SIZE;
+
+        if (next_head != rx_tail)
+        {
+            rx_buffer[rx_head] = data;
+            rx_head = next_head;
+        }
+
+        else
+        {
+        	buffer_OVF = 1;
+        }
     }
 }
