@@ -13,10 +13,11 @@ uint8_t mFlag = 0;
 
 // Must be in the order of addresses from lower to higher
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
+static uint8_t selected_slave = 0;
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
-uint16_t CRC16(char *nData, uint16_t wLength)
+uint16_t CRC16(uint8_t *nData, uint16_t wLength)
 {
 	static const uint16_t wCRCTable[] = {
 		0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
@@ -66,11 +67,11 @@ uint16_t CRC16(char *nData, uint16_t wLength)
 	return wCRCWord;
 }
 
-uint8_t* MODBUS_CheckAdress(uint8_t *c)
+uint8_t MODBUS_CheckAdress(uint8_t c)
 {
 	for (int i = 0; i < SLAVE_COUNT; ++i)
 	{
-		if (MODBUS_Slaves[i] == *c)
+		if (MODBUS_Slaves[i] == c)
 		{
 			mFlag = 1;
 			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
@@ -79,10 +80,7 @@ uint8_t* MODBUS_CheckAdress(uint8_t *c)
 		}
 	}
 
-	if (mFlag != 1)
-	{
-		GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
-	}
+	mFlag = 2;
 
 	return NULL;
 }
@@ -118,23 +116,23 @@ uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 
 #if DEBUG == 1
 		snprintf(buffer, 50, "Invalid CRC expected %.2x%.2x got %.4X",
-				MODBUS_Frame[MODBUS_FRAME_SIZE - 1], MODBUS_Frame[MODBUS_FRAME_SIZE - 2], MODBUS_FrameCRC);
+		MODBUS_Frame[MODBUS_FRAME_SIZE - 1], MODBUS_Frame[MODBUS_FRAME_SIZE - 2], MODBUS_FrameCRC);
 		USART2_write_buffer(buffer);
 #endif
 	return 1;
 
 }
 
-void MODBUS_ProcessFrame(uint8_t *selected_slave)
+void MODBUS_ProcessFrame()
 {
 	uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
 	uint8_t buffer[100];
 
+	USART2->CR1 &= ~USART_CR1_RXNEIE;			//disable RX interrupt
 	if (mFlag == 1)
 	{
-		USART2->CR1 &= ~USART_CR1_RXNEIE;			//disable RX interrupt
 
-		MODBUS_Frame[0] = *selected_slave;
+		MODBUS_Frame[0] = selected_slave;
 		MODBUS_ReadFrame(MODBUS_Frame);
 		uint8_t error = MODBUS_VerifyCRC(MODBUS_Frame);
 
@@ -147,9 +145,16 @@ void MODBUS_ProcessFrame(uint8_t *selected_slave)
 			USART2_write_buffer(buffer);
 		}
 #endif
-		mFlag = 2;
-		USART2->CR1 |= USART_CR1_RXNEIE;
 	}
+
+	else if (mFlag == 2)
+	{
+		MODBUS_DiscardFrame();
+		GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0000 0000 clear bit 5. p186
+	}
+
+	mFlag = 0; // Frame processed set back to "waiting" state
+	USART2->CR1 |= USART_CR1_RXNEIE;
 }
 
 void MODBUS_DiscardFrame()
@@ -163,27 +168,16 @@ void MODBUS_DiscardFrame()
     // Clear all data
     while (USART2->SR & USART_SR_RXNE)
     {
-        volatile uint8_t c = USART2->DR; // Read the data register to clear the flag
+        uint8_t c = USART2->DR;
     }
 }
 
 void MODBUS_IRQHandler()
 {
-	uint8_t c = 0;
-	uint8_t *selected_slave;
-
-	if(USART2->SR & USART_SR_RXNE)
-	{
-		c = USART2->DR;
-		mFlag = 2;
-		selected_slave = MODBUS_CheckAdress(&c);
-		if (selected_slave == NULL)
-		{
-			MODBUS_DiscardFrame();
-		}
-
-		MODBUS_ProcessFrame(selected_slave);
-	}
+    uint8_t c = 0;
+    if (USART2->SR & USART_SR_RXNE)
+    {
+        c = USART2->DR;
+        selected_slave = MODBUS_CheckAdress(c);
+    }
 }
-
-

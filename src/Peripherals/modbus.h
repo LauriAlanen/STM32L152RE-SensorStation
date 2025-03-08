@@ -20,12 +20,12 @@
 
 extern uint8_t mFlag;
 
-uint16_t CRC16(char *nData, uint16_t wLength);
+uint16_t CRC16(uint8_t *nData, uint16_t wLength);
 void MODBUS_IRQHandler();
-void MODBUS_ProcessFrame(uint8_t *selected_slave);
+void MODBUS_ProcessFrame();
 void MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
 void MODBUS_DiscardFrame();
-uint8_t* MODBUS_CheckAdress(uint8_t *c);
+uint8_t MODBUS_CheckAdress(uint8_t c);
 uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame);
 
 #endif /* PERIPHERALS_MODBUS_H_ */
