@@ -179,8 +179,19 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
     }
 }
 
-void DHT22_ModbusHandler()
+void DHT22_ModbusHandler(DHT22_)
 {
+	DHT22_Reading dht22_reading;
+	uint8_t buffer[100];
+
+	if(!(DHT22_read(&dht22_reading)))
+	{
+	    snprintf(buffer, 100, "DHT22 Humidity %d.%d", dht22_reading.humidity_int, dht22_reading.humidity_dec);
+		USART2_write_buffer(buffer);
+		snprintf(buffer, 100, "DHT22 Temperature %d.%d", dht22_reading.temperature_int, dht22_reading.temperature_dec);
+		USART2_write_buffer(buffer);
+	}
+
 	return;
 }
 

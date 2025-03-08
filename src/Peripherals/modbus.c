@@ -7,7 +7,7 @@
 
 #include "modbus.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 uint8_t mFlag = 0;
 uint8_t frame_ready = 0;
@@ -123,6 +123,21 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
 
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame)
 {
+	switch (MODBUS_Frame[0])
+	{
+		case LMT84LP_MODBUS_ADDRESS:
+			break;
+
+		case NSL19M51_MODBUS_ADDRESS:
+			break;
+
+		case DHT22_MODBUS_ADDRESS:
+			DHT22_ModbusHandler();
+			break;
+
+		default:
+			break;
+	}
 
 }
 
