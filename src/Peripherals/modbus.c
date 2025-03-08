@@ -73,25 +73,7 @@ uint16_t CRC16(uint8_t *nData, uint16_t wLength)
 	return wCRCWord;
 }
 
-uint8_t MODBUS_CheckAdress(uint8_t c)
-{
-	for (int i = 0; i < SLAVE_COUNT; ++i)
-	{
-		if (MODBUS_Slaves[i] == c)
-		{
-			mFlag = 1;
-			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
-
-			return c;
-		}
-	}
-
-	mFlag = 2;
-
-	return NULL;
-}
-
-uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
+MODBUS_Status MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 {
 	uint16_t MODBUS_FrameCRC = 0;
 	uint8_t buffer[100];
@@ -102,20 +84,25 @@ uint8_t MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
 	if (CRC_lsb && CRC_msb)
 	{
-#if DEBUG == 1
-		snprintf(buffer, 20, "%s", "Valid CRC");
-		USART2_write_buffer(buffer);
-#endif
-		return 0;
+		return MODBUS_CRC_VALID;
 	}
 
-#if DEBUG == 1
-		snprintf(buffer, 50, "Invalid CRC expected %.2x%.2x got %.4X",
-		MODBUS_Frame[MODBUS_FRAME_SIZE - 1], MODBUS_Frame[MODBUS_FRAME_SIZE - 2], MODBUS_FrameCRC);
-		USART2_write_buffer(buffer);
-#endif
-	return 1;
+	return MODBUS_CRC_INVALID;
+}
 
+MODBUS_Status MODBUS_CheckAddress(uint8_t address)
+{
+    for (int i = 0; i < SLAVE_COUNT; ++i)
+    {
+        if (MODBUS_Slaves[i] == address)
+        {
+            GPIOA->ODR |= GPIO_ODR_ODR_5;
+            return MODBUS_ADDR_VALID;
+        }
+    }
+
+    GPIOA->ODR &= ~GPIO_ODR_ODR_5;
+    return MODBUS_ADDR_INVALID;
 }
 
 void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
@@ -134,44 +121,70 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
     }
 }
 
-void MODBUS_ProcessFrame()
+MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame)
+{
+
+}
+
+void MODBUS_ProcessFrame(void)
 {
 	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-	uint8_t buffer[100];
+    MODBUS_BuildFrame(MODBUS_Frame);
 
-	MODBUS_BuildFrame(MODBUS_Frame);
+    if (!frame_ready)
+    {
+        return;
+    }
 
-	if (frame_ready)
+    MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
+
+    if (status == MODBUS_ADDR_VALID)
+    {
+        MODBUS_ProcessValidFrame(MODBUS_Frame);
+    }
+
+    else
+    {
+        MODBUS_ProcessInvalidFrame();
+    }
+
+    frame_ready = 0;
+}
+
+void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
+{
+	if (MODBUS_VerifyCRC(MODBUS_Frame) == MODBUS_CRC_INVALID)
 	{
-		MODBUS_CheckAdress(MODBUS_Frame[0]);
-		if (mFlag == 1)
-		{
-			uint8_t error = MODBUS_VerifyCRC(MODBUS_Frame);
-
-#if DEBUG == 1
-			GPIOA->ODR |= GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
-			snprintf(buffer, 20, "%s", "Generated frame:");
-			USART2_write_buffer(buffer);
-			for (int i = 0; i < MODBUS_FRAME_SIZE; ++i)
-			{
-				snprintf(buffer, 4, "%.2x", MODBUS_Frame[i]);
-				USART2_write_buffer(buffer);
-			}
+#ifdef DEBUG
+	    char debugBuffer[100];
+		snprintf(debugBuffer, 20, "%s", "Checksum error!");
+		USART2_write_buffer(debugBuffer);
 #endif
-		}
-
-		else if (mFlag == 2)
-		{
-#if DEBUG == 1
-			GPIOA->ODR &= ~GPIO_ODR_ODR_5; //0010 0000 set bit 5. p186
-			uint8_t buffer[100];
-			snprintf(buffer, 20, "%s", "Invalid address!");
-			USART2_write_buffer(buffer);
-#endif
-		}
-
-		frame_ready = 0;
+		return;
 	}
+
+    MODBUS_ReadSensor(MODBUS_Frame);
+
+#if DEBUG == 1
+    char debugBuffer[100];
+    snprintf(debugBuffer, sizeof(debugBuffer), "Generated frame:");
+    USART2_write_buffer(debugBuffer);
+
+    for (int i = 0; i < MODBUS_FRAME_SIZE; ++i)
+    {
+        snprintf(debugBuffer, sizeof(debugBuffer), "%.2x ", MODBUS_Frame[i]);
+        USART2_write_buffer(debugBuffer);
+    }
+#endif
+}
+
+void MODBUS_ProcessInvalidFrame(void)
+{
+#if DEBUG == 1
+    char debugBuffer[100];
+    snprintf(debugBuffer, sizeof(debugBuffer), "Invalid address!");
+    USART2_write_buffer(debugBuffer);
+#endif
 }
 
 uint8_t MODBUS_RingBufferRead(uint8_t *data)
@@ -185,7 +198,6 @@ uint8_t MODBUS_RingBufferRead(uint8_t *data)
     rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
     return 0;
 }
-
 
 void MODBUS_IRQHandler()
 {
