@@ -6,10 +6,10 @@
  */
 
 #include "modbus.h"
+#include "dht22.h"
 
 #define DEBUG 0
 
-uint8_t mFlag = 0;
 uint8_t frame_ready = 0;
 
 // Ring buffer
@@ -17,9 +17,7 @@ volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t buffer_OVF = 0;
 volatile uint16_t rx_head = 0, rx_tail = 0;
 
-// Must be in the order of addresses from lower to higher
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
-volatile uint8_t selected_slave = 0;
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
@@ -76,7 +74,6 @@ uint16_t CRC16(uint8_t *nData, uint16_t wLength)
 MODBUS_Status MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 {
 	uint16_t MODBUS_FrameCRC = 0;
-	uint8_t buffer[100];
 
 	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 2); // Exclude the CRC itself
 
@@ -110,7 +107,7 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
 	static uint8_t frame_index = 0;
 	uint8_t byte;
 
-    while (MODBUS_RingBufferRead(&byte) == 0)
+    while (MODBUS_RingBufferRead(&byte) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
     	MODBUS_Frame[frame_index++] = byte;
     	if (frame_index >= MODBUS_FRAME_SIZE)
@@ -121,8 +118,10 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
     }
 }
 
-MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame)
+MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
 {
+	MODBUS_Reading reading;
+
 	switch (MODBUS_Frame[0])
 	{
 		case LMT84LP_MODBUS_ADDRESS:
@@ -132,13 +131,25 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame)
 			break;
 
 		case DHT22_MODBUS_ADDRESS:
-			DHT22_ModbusHandler(); // Example request frame 0x06 0x04 0x00 0x01 0x00 0x01 0x61 0xBD
+			DHT22_ModbusHandler(&reading); // Example request frame for temperature 0x06 0x04 0x00 0x01 0x00 0x01 0x61 0xBD humidity 0x06 0x04 0x00 0x02 0x00 0x01 0x91 0xBD
+
+			if (MODBUS_Frame[3] == 0x01)
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.humidity);
+			}
+
+			else
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.temperature);
+			}
+
 			break;
 
 		default:
 			break;
 	}
 
+	return MODBUS_SENSOR_READ_OK;
 }
 
 void MODBUS_ProcessFrame(void)
@@ -151,6 +162,7 @@ void MODBUS_ProcessFrame(void)
         return;
     }
 
+    GPIOA->ODR |= GPIO_ODR_ODR_5;
     MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
 
     if (status == MODBUS_ADDR_VALID)
@@ -166,6 +178,14 @@ void MODBUS_ProcessFrame(void)
     frame_ready = 0;
 }
 
+MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
+{
+	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
+	{
+		USART2_write(MODBUS_ResponseFrame[i]);
+	}
+}
+
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 {
 	if (MODBUS_VerifyCRC(MODBUS_Frame) == MODBUS_CRC_INVALID)
@@ -178,7 +198,9 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 		return;
 	}
 
-    MODBUS_ReadSensor(MODBUS_Frame);
+	uint8_t MODBUS_ResponseFrame[MODBUS_FRAME_SIZE];
+    MODBUS_ReadSensor(MODBUS_Frame, MODBUS_ResponseFrame);
+    MODBUS_TransmitResponse(MODBUS_ResponseFrame);
 
 #if DEBUG == 1
     char debugBuffer[100];
@@ -202,16 +224,34 @@ void MODBUS_ProcessInvalidFrame(void)
 #endif
 }
 
-uint8_t MODBUS_RingBufferRead(uint8_t *data)
+MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
 {
     if (rx_tail == rx_head)
     {
-        return -1;
+        return MODBUS_RINGBUFFER_EMPTY;
     }
 
     *data = rx_buffer[rx_tail];
     rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
-    return 0;
+    return MODBUS_RINGBUFFER_NOT_EMPTY;
+}
+
+MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading)
+{
+	uint16_t MODBUS_FrameCRC = 0x0000;
+
+	MODBUS_Frame[0] = slave_addr;
+	MODBUS_Frame[1] = MODBUS_READ_INPUT_REG;
+	MODBUS_Frame[2] = 0x02; // Send 2 bytes
+
+	MODBUS_Frame[3] = reading >> 8;
+	MODBUS_Frame[4] = reading & 0x00FF;
+
+	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 3);
+	MODBUS_Frame[5] = MODBUS_FrameCRC >> 8;
+	MODBUS_Frame[6] = MODBUS_FrameCRC & 0x00FF;
+
+	return MODBUS_FRAME_OK;
 }
 
 void MODBUS_IRQHandler()

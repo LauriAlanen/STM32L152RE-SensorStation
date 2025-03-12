@@ -17,14 +17,12 @@
 
 int main(void)
 {
-	char buffer[BUFFER_SIZE];
-
 	// CMSIS Initializations
 
 	SetSysClock();
 	SystemCoreClockUpdate();
 
-	// Utils Initializationsd
+	// Utils Initializations
 
 	// Peripheral Initializations
 	GPIO_init();

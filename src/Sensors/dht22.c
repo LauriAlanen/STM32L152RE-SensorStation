@@ -1,24 +1,9 @@
 #include "dht22.h"
-#include "timing.h"
-#include "usart.h"
-#include <stdio.h>
 
-// PIN PB3
-#define TIMEOUT_20_MS 640000
-#define TIMEOUT_90_US 2880
-#define TIMEOUT_50_US 1600
-#define TIMEOUT_28_US 896
-
-#define BIT_COUNT 41
-
-#define DHT_MEASURING 3
-#define DHT_NOT_READY 2
-#define DHT_ERROR 1
-#define DHT_READY 0
+#define DEBUG 0
 
 static volatile uint8_t pulses[BIT_COUNT];
 static volatile uint8_t dht_status = 0;
-static uint8_t skip_bits = 0;
 
 void DHT22_SWITCH_MODE_OUTPUT()
 {
@@ -44,7 +29,7 @@ void DHT22_init()
     NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
 
-int DHT22_read(DHT22_Reading *reading)
+uint8_t DHT22_read(MODBUS_Reading *reading)
 {
     uint8_t byte_list[5] = {0};
     uint8_t buffer[100];
@@ -97,10 +82,13 @@ int DHT22_read(DHT22_Reading *reading)
 			USART2_write_buffer(buffer);
 		}
 
-		reading->humidity_int = humidity / 10;
-		reading->humidity_dec = humidity % 10;
-		reading->temperature_int = temperature / 10;
-		reading->temperature_dec = temperature % 10;
+		//reading->humidity_int = humidity / 10;
+		//reading->humidity_dec = humidity % 10;
+		reading->humidity = (humidity / 10) << 8 | humidity % 10;
+
+		//reading->temperature_int = temperature / 10;
+		//reading->temperature_dec = temperature % 10;
+		reading->temperature = (temperature / 10) << 8 | temperature % 10;
 
 		return DHT_READY;
     }
@@ -122,7 +110,7 @@ void DHT22_start()
 	delay_us(20);
 }
 
-int DHT22_wait_response()
+uint8_t DHT22_wait_response()
 {
     SysTick->LOAD = TIMEOUT_90_US - 1; // Set maximum allowable wait time
 	SysTick->VAL = 0;
@@ -179,17 +167,18 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
     }
 }
 
-void DHT22_ModbusHandler(DHT22_)
+void DHT22_ModbusHandler(MODBUS_Reading* reading)
 {
-	DHT22_Reading dht22_reading;
 	uint8_t buffer[100];
 
-	if(!(DHT22_read(&dht22_reading)))
+	if(!(DHT22_read(reading)))
 	{
-	    snprintf(buffer, 100, "DHT22 Humidity %d.%d", dht22_reading.humidity_int, dht22_reading.humidity_dec);
+#if DEBUG == 1
+	    snprintf(buffer, 100, "DHT22 Humidity %4x", reading->humidity);
 		USART2_write_buffer(buffer);
-		snprintf(buffer, 100, "DHT22 Temperature %d.%d", dht22_reading.temperature_int, dht22_reading.temperature_dec);
+		snprintf(buffer, 100, "DHT22 Temperature %4x", reading->temperature);
 		USART2_write_buffer(buffer);
+#endif
 	}
 
 	return;
