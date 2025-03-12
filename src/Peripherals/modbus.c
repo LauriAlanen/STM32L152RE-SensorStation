@@ -178,6 +178,13 @@ void MODBUS_ProcessFrame(void)
     frame_ready = 0;
 }
 
+
+
+// T‰h‰n pit‰isi tehd‰ jokin parempi ratkaisu ett‰ miten dataa l‰hetet‰‰n, niin ett‰ s‰ilytet‰‰n viel‰ tarkkuus ja mahdollinein miinus merkki
+
+
+
+
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
 	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
