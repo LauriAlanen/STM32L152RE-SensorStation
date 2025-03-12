@@ -42,11 +42,10 @@ typedef struct MODBUS_Reading {
 
 void MODBUS_IRQHandler();
 void MODBUS_ProcessFrame();
-void MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
 void MODBUS_DiscardFrame();
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame);
 void MODBUS_ProcessInvalidFrame(void);
-void MODBUS_BuildFrame(uint8_t *MODBUS_Frame);
+void MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
 uint16_t CRC16(uint8_t *nData, uint16_t wLength);
 MODBUS_Status MODBUS_RingBufferRead(uint8_t *data);
 MODBUS_Status MODBUS_CheckAddress(uint8_t address);

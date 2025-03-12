@@ -31,11 +31,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  13 .debug_line   00001a7a  00000000  00000000  000278b8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_str    00001397  00000000  00000000  00029332  2**0
+ 14 .debug_str    00001396  00000000  00000000  00029332  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .comment      0000007c  00000000  00000000  0002a6c9  2**0
+ 15 .comment      0000007c  00000000  00000000  0002a6c8  2**0
                   CONTENTS, READONLY
- 16 .debug_frame  00000c98  00000000  00000000  0002a748  2**2
+ 16 .debug_frame  00000c98  00000000  00000000  0002a744  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -312,9 +312,9 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
  80002d0:	20000000 	.word	0x20000000
  80002d4:	40020000 	.word	0x40020000
 
-080002d8 <MODBUS_BuildFrame>:
+080002d8 <MODBUS_ReadFrame>:
 
-void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
+void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 {
  80002d8:	b580      	push	{r7, lr}
  80002da:	b084      	sub	sp, #16
@@ -324,14 +324,14 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
 	uint8_t byte;
 
     while (MODBUS_RingBufferRead(&byte) == MODBUS_RINGBUFFER_NOT_EMPTY)
- 80002e0:	e014      	b.n	800030c <MODBUS_BuildFrame+0x34>
+ 80002e0:	e014      	b.n	800030c <MODBUS_ReadFrame+0x34>
     {
     	MODBUS_Frame[frame_index++] = byte;
- 80002e2:	4b10      	ldr	r3, [pc, #64]	; (8000324 <MODBUS_BuildFrame+0x4c>)
+ 80002e2:	4b10      	ldr	r3, [pc, #64]	; (8000324 <MODBUS_ReadFrame+0x4c>)
  80002e4:	781b      	ldrb	r3, [r3, #0]
  80002e6:	1c5a      	adds	r2, r3, #1
  80002e8:	b2d1      	uxtb	r1, r2
- 80002ea:	4a0e      	ldr	r2, [pc, #56]	; (8000324 <MODBUS_BuildFrame+0x4c>)
+ 80002ea:	4a0e      	ldr	r2, [pc, #56]	; (8000324 <MODBUS_ReadFrame+0x4c>)
  80002ec:	7011      	strb	r1, [r2, #0]
  80002ee:	461a      	mov	r2, r3
  80002f0:	687b      	ldr	r3, [r7, #4]
@@ -339,17 +339,17 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
  80002f4:	7bfa      	ldrb	r2, [r7, #15]
  80002f6:	701a      	strb	r2, [r3, #0]
     	if (frame_index >= MODBUS_FRAME_SIZE)
- 80002f8:	4b0a      	ldr	r3, [pc, #40]	; (8000324 <MODBUS_BuildFrame+0x4c>)
+ 80002f8:	4b0a      	ldr	r3, [pc, #40]	; (8000324 <MODBUS_ReadFrame+0x4c>)
  80002fa:	781b      	ldrb	r3, [r3, #0]
  80002fc:	2b07      	cmp	r3, #7
- 80002fe:	d905      	bls.n	800030c <MODBUS_BuildFrame+0x34>
+ 80002fe:	d905      	bls.n	800030c <MODBUS_ReadFrame+0x34>
     	{
     		frame_ready = 1;
- 8000300:	4b09      	ldr	r3, [pc, #36]	; (8000328 <MODBUS_BuildFrame+0x50>)
+ 8000300:	4b09      	ldr	r3, [pc, #36]	; (8000328 <MODBUS_ReadFrame+0x50>)
  8000302:	2201      	movs	r2, #1
  8000304:	701a      	strb	r2, [r3, #0]
     		frame_index = 0;
- 8000306:	4b07      	ldr	r3, [pc, #28]	; (8000324 <MODBUS_BuildFrame+0x4c>)
+ 8000306:	4b07      	ldr	r3, [pc, #28]	; (8000324 <MODBUS_ReadFrame+0x4c>)
  8000308:	2200      	movs	r2, #0
  800030a:	701a      	strb	r2, [r3, #0]
     while (MODBUS_RingBufferRead(&byte) == MODBUS_RINGBUFFER_NOT_EMPTY)
@@ -358,7 +358,7 @@ void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
  8000312:	f000 f8b3 	bl	800047c <MODBUS_RingBufferRead>
  8000316:	4603      	mov	r3, r0
  8000318:	2b09      	cmp	r3, #9
- 800031a:	d0e2      	beq.n	80002e2 <MODBUS_BuildFrame+0xa>
+ 800031a:	d0e2      	beq.n	80002e2 <MODBUS_ReadFrame+0xa>
 		}
     }
 }
@@ -447,9 +447,9 @@ void MODBUS_ProcessFrame(void)
  800038e:	b082      	sub	sp, #8
  8000390:	af00      	add	r7, sp, #0
 	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-    MODBUS_BuildFrame(MODBUS_Frame);
+    MODBUS_ReadFrame(MODBUS_Frame);
  8000392:	4812      	ldr	r0, [pc, #72]	; (80003dc <MODBUS_ProcessFrame+0x50>)
- 8000394:	f7ff ffa0 	bl	80002d8 <MODBUS_BuildFrame>
+ 8000394:	f7ff ffa0 	bl	80002d8 <MODBUS_ReadFrame>
 
     if (!frame_ready)
  8000398:	4b11      	ldr	r3, [pc, #68]	; (80003e0 <MODBUS_ProcessFrame+0x54>)
@@ -726,18 +726,18 @@ MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_ad
  8000526:	f7ff fe4d 	bl	80001c4 <CRC16>
  800052a:	4603      	mov	r3, r0
  800052c:	81fb      	strh	r3, [r7, #14]
-	MODBUS_Frame[5] = MODBUS_FrameCRC >> 8;
+	MODBUS_Frame[5] = MODBUS_FrameCRC & 0x00FF;
  800052e:	687b      	ldr	r3, [r7, #4]
  8000530:	3305      	adds	r3, #5
  8000532:	89fa      	ldrh	r2, [r7, #14]
- 8000534:	0a12      	lsrs	r2, r2, #8
- 8000536:	b292      	uxth	r2, r2
- 8000538:	b2d2      	uxtb	r2, r2
- 800053a:	701a      	strb	r2, [r3, #0]
-	MODBUS_Frame[6] = MODBUS_FrameCRC & 0x00FF;
- 800053c:	687b      	ldr	r3, [r7, #4]
- 800053e:	3306      	adds	r3, #6
- 8000540:	89fa      	ldrh	r2, [r7, #14]
+ 8000534:	b2d2      	uxtb	r2, r2
+ 8000536:	701a      	strb	r2, [r3, #0]
+	MODBUS_Frame[6] = MODBUS_FrameCRC >> 8;
+ 8000538:	687b      	ldr	r3, [r7, #4]
+ 800053a:	3306      	adds	r3, #6
+ 800053c:	89fa      	ldrh	r2, [r7, #14]
+ 800053e:	0a12      	lsrs	r2, r2, #8
+ 8000540:	b292      	uxth	r2, r2
  8000542:	b2d2      	uxtb	r2, r2
  8000544:	701a      	strb	r2, [r3, #0]
 

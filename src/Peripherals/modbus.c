@@ -102,7 +102,7 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
     return MODBUS_ADDR_INVALID;
 }
 
-void MODBUS_BuildFrame(uint8_t *MODBUS_Frame)
+void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 {
 	static uint8_t frame_index = 0;
 	uint8_t byte;
@@ -155,7 +155,7 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 void MODBUS_ProcessFrame(void)
 {
 	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-    MODBUS_BuildFrame(MODBUS_Frame);
+    MODBUS_ReadFrame(MODBUS_Frame);
 
     if (!frame_ready)
     {
@@ -248,8 +248,8 @@ MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_ad
 	MODBUS_Frame[4] = reading & 0x00FF;
 
 	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 3);
-	MODBUS_Frame[5] = MODBUS_FrameCRC >> 8;
-	MODBUS_Frame[6] = MODBUS_FrameCRC & 0x00FF;
+	MODBUS_Frame[5] = MODBUS_FrameCRC & 0x00FF;
+	MODBUS_Frame[6] = MODBUS_FrameCRC >> 8;
 
 	return MODBUS_FRAME_OK;
 }
