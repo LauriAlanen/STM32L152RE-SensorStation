@@ -37,7 +37,7 @@ void I2C1_Init(void)
 	I2C1->CR1 |= 0x0001;			//peripheral enable (I2C1)
 }
 
-void I2C1_Write(uint8_t address, uint8_t command, int n, uint8_t* data)
+void I2C1_Write(uint8_t address, int n, uint8_t* data)
 {
 	volatile int tmp;
 	int i;
@@ -53,8 +53,6 @@ void I2C1_Write(uint8_t address, uint8_t command, int n, uint8_t* data)
 
 	tmp=I2C1->SR2;					//Reading I2C_SR2 after reading I2C_SR1 clears the ADDR flag p691
 	while(!(I2C1->SR1 & 0x80)){}	//wait until data register empty p.689
-
-	I2C1->DR = command;				//send command
 
 	//write data
 	for(i=0;i<n;i++)
@@ -89,7 +87,7 @@ void I2C1_ByteWrite(uint8_t address, uint8_t command)
 	I2C1->CR1 |= (1<<9);			//generate stop
 }
 
-void I2C1_Read(uint8_t address, uint8_t command, int n, uint8_t* data)
+void I2C1_Read(uint8_t address, int n, uint8_t* data)
 {
 	volatile int tmp;
 
@@ -103,9 +101,6 @@ void I2C1_Read(uint8_t address, uint8_t command, int n, uint8_t* data)
 	while(!(I2C1->SR1 & 2)){}		//wait until end of address transmission p.690
 
 	tmp=I2C1->SR2;					//Reading I2C_SR2 after reading I2C_SR1 clears the ADDR flag p691
-	while(!(I2C1->SR1 & 0x80)){}	//wait until data register empty p.689
-
-	I2C1->DR=command;				//send command
 	while(!(I2C1->SR1 & 0x80)){}	//wait until data register empty p.689
 
 	I2C1->CR1 |= 0x100;				//generate repeated start p.694
