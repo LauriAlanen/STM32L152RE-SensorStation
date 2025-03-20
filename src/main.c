@@ -4,13 +4,17 @@
 
 #include "adc.h"
 #include "usart.h"
+#include "gpio.h"
+#include "modbus.h"
+
 #include "lmt84lp.h"
 #include "nsl19m51.h"
 #include "dht22.h"
-#include "gpio.h"
+#include "grove-voc.h"
+
 #include "timing.h"
 #include "timers.h"
-#include "modbus.h"
+
 #include <stdio.h>
 
 #define BUFFER_SIZE 50
