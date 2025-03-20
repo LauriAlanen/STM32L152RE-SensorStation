@@ -8,9 +8,9 @@
 #ifndef SENSORS_SGP30_H_
 #define SENSORS_SGP30_H_
 
-#include "sensirion_arch_config.h"
-#include "sensirion_common.h"
-#include "sensirion_i2c.h"
+#include "Drivers/Sensirion/sensirion_arch_config.h"
+#include "Drivers/Sensirion/sensirion_common.h"
+#include "Drivers/Sensirion/sensirion_i2c.h"
 
 #define SGP30_ERR_UNSUPPORTED_FEATURE_SET (-10)
 #define SGP30_ERR_INVALID_PRODUCT_TYPE (-12)

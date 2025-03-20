@@ -5,8 +5,8 @@
  *      Author: lauri
  */
 
-#ifndef SENSORS_SENSIRION_I2C_H_
-#define SENSORS_SENSIRION_I2C_H_
+#ifndef DRIVERS_SENSIRION_SENSIRION_I2C_H_
+#define DRIVERS_SENSIRION_SENSIRION_I2C_H_
 
 #include "stm32l1xx.h"
 #include "i2c.h"

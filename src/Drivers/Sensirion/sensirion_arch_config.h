@@ -29,8 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SENSORS_SENSIRION_ARCH_CONFIG_H_
-#define SENSORS_SENSIRION_ARCH_CONFIG_H_
+#ifndef DRIVERS_SENSIRION_SENSIRION_ARCH_CONFIG_H_
+#define DRIVERS_SENSIRION_SENSIRION_ARCH_CONFIG_H_
 
 /**
  * If your platform does not provide the library stdlib.h you have to remove the
@@ -93,5 +93,5 @@
  */
 #define SENSIRION_I2C_CLOCK_PERIOD_USEC 10
 
-#endif /* SENSORS_SENSIRION_ARCH_CONFIG_H_ */
+#endif /* DRIVERS_SENSIRION_ARCH_CONFIG_H_ */
 

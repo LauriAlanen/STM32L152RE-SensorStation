@@ -41,9 +41,9 @@ const char* SGP_DRV_VERSION_STR = 1;
  */
 
 #include "sgp30.h"
-#include "sensirion_arch_config.h"
-#include "sensirion_common.h"
-#include "sensirion_i2c.h"
+#include "Drivers/Sensirion/sensirion_arch_config.h"
+#include "Drivers/Sensirion/sensirion_common.h"
+#include "Drivers/Sensirion/sensirion_i2c.h"
 
 #define SGP30_PRODUCT_TYPE 0
 static const uint8_t SGP30_I2C_ADDRESS = 0x58;

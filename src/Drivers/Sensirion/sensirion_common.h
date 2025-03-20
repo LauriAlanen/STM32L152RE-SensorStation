@@ -5,8 +5,8 @@
  *      Author: lauri
  */
 
-#ifndef SENSORS_SENSIRION_COMMON_H_
-#define SENSORS_SENSIRION_COMMON_H_
+#ifndef DRIVERS_SENSIRION_SENSIRION_COMMON_H_
+#define DRIVERS_SENSIRION_SENSIRION_COMMON_H_
 
 #include "sensirion_arch_config.h"
 
@@ -184,4 +184,4 @@ int16_t sensirion_i2c_read_cmd(uint8_t address, uint16_t cmd,
 #endif
 
 
-#endif /* SENSORS_SENSIRION_COMMON_H_ */
+#endif /* DRIVERS_SENSIRION_COMMON_H_ */
