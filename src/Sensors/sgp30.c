@@ -1,7 +1,7 @@
 /*
  * sgp30.c
  *
- *  Created on: 20 Mar 2025
+ *  Modified on: 20 Mar 2025
  *      Author: lauri
  */
 
@@ -400,3 +400,15 @@ int16_t sgp30_probe() {
     return sgp30_iaq_init();
 }
 
+int16_t sgp30_modbus_read(MODBUS_Reading* reading)
+{
+	int16_t err = 0;
+
+    err = sgp30_measure_iaq_blocking_read(&reading->tvoc_ppb, &reading->co2_eq_ppm);
+    if (err == STATUS_OK)
+    {
+    	return 0;
+    }
+
+    return 1;
+}

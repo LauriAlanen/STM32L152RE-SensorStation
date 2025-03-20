@@ -7,6 +7,10 @@
 
 #include "modbus.h"
 #include "dht22.h"
+#include "lmt84lp.h"
+#include "nsl19m51.h"
+#include "sgp30.h"
+#include "usart.h"
 
 #define DEBUG 0
 
@@ -17,7 +21,7 @@ volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t buffer_OVF = 0;
 volatile uint16_t rx_head = 0, rx_tail = 0;
 
-uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
+uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, SGP30_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
@@ -121,6 +125,7 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
 {
 	MODBUS_Reading reading;
+	uint8_t buffer[100];
 
 	switch (MODBUS_Frame[0])
 	{
@@ -128,6 +133,14 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 			break;
 
 		case NSL19M51_MODBUS_ADDRESS:
+			break;
+
+		case SGP30_MODBUS_ADDRESS:
+			sgp30_modbus_read(&reading);
+            sprintf(buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
+            USART2_write_buffer(buffer);
+            sprintf(buffer, "CO2eq Concentration: %dppm\r\n", reading.co2_eq_ppm);
+            USART2_write_buffer(buffer);
 			break;
 
 		case DHT22_MODBUS_ADDRESS:

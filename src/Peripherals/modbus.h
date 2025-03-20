@@ -9,12 +9,9 @@
 #define PERIPHERALS_MODBUS_H_
 
 #include "stm32l1xx.h"
-#include "lmt84lp.h"
-#include "nsl19m51.h"
-#include "usart.h"
 #include <stdio.h>
 
-#define SLAVE_COUNT 3
+#define SLAVE_COUNT 4
 #define MODBUS_FRAME_SIZE 8
 #define RX_BUFFER_SIZE 128
 
@@ -38,6 +35,8 @@ typedef struct MODBUS_Reading {
 	uint16_t temperature;
 	uint16_t humidity;
 	uint16_t lux;
+    uint16_t tvoc_ppb;
+    uint16_t co2_eq_ppm;
 } MODBUS_Reading;
 
 void MODBUS_IRQHandler();

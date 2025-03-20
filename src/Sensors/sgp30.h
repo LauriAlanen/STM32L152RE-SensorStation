@@ -1,7 +1,7 @@
 /*
  * sgp30.h
  *
- *  Created on: 20 Mar 2025
+ *  Modified on: 20 Mar 2025
  *      Author: lauri
  */
 
@@ -12,8 +12,12 @@
 #include "Drivers/Sensirion/sensirion_common.h"
 #include "Drivers/Sensirion/sensirion_i2c.h"
 
+#include "modbus.h"
+
 #define SGP30_ERR_UNSUPPORTED_FEATURE_SET (-10)
 #define SGP30_ERR_INVALID_PRODUCT_TYPE (-12)
+
+#define SGP30_MODBUS_ADDRESS 0x05
 
 #ifdef __cplusplus
 extern "C" {
@@ -288,6 +292,11 @@ int16_t sgp30_measure_test(uint16_t* test_result);
  * Return:      STATUS_OK on success, an error code otherwise
  */
 int16_t sgp30_set_absolute_humidity(uint32_t absolute_humidity);
+
+int16_t sgp30_modbus_read(MODBUS_Reading* reading);
+
+
+
 
 #ifdef __cplusplus
 }
