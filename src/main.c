@@ -28,6 +28,7 @@ int main(void)
 
 	// Peripheral Initializations
 	GPIO_init();
+	USART1_init();
 	USART2_init();
 	TIM2_Init();
 
@@ -41,6 +42,7 @@ int main(void)
     {
 		MODBUS_ProcessFrame();
 		delay_ms(1);
+
     }
     return 0;
 }

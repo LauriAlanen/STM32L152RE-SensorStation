@@ -97,13 +97,13 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
     {
         if (MODBUS_Slaves[i] == address)
         {
-            GPIOA->ODR |= GPIO_ODR_ODR_5;
+        	LED_BUILTIN_HIGH();
             return MODBUS_ADDR_VALID;
         }
     }
 
-    GPIOA->ODR &= ~GPIO_ODR_ODR_5;
-    return MODBUS_ADDR_INVALID;
+    LED_BUILTIN_LOW();
+	return MODBUS_ADDR_INVALID;
 }
 
 void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
@@ -188,7 +188,7 @@ void MODBUS_ProcessFrame(void)
         return;
     }
 
-    GPIOA->ODR |= GPIO_ODR_ODR_5;
+    LED_BUILTIN_HIGH();
     MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
 
     if (status == MODBUS_ADDR_VALID)
@@ -205,13 +205,14 @@ void MODBUS_ProcessFrame(void)
 }
 
 // T‰h‰n pit‰isi tehd‰ jokin parempi ratkaisu ett‰ miten dataa l‰hetet‰‰n, niin ett‰ s‰ilytet‰‰n viel‰ tarkkuus ja mahdollinein miinus merkki
-
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
+	MODBUS_RE_TE_HIGH();
 	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
 	{
-		USART2_write(MODBUS_ResponseFrame[i]);
+		USART1_write(MODBUS_ResponseFrame[i]);
 	}
+	MODBUS_RE_TE_LOW();
 }
 
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
@@ -284,9 +285,9 @@ MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_ad
 
 void MODBUS_IRQHandler()
 {
-    if (USART2->SR & USART_SR_RXNE)
+    if (USART1->SR & USART_SR_RXNE)
     {
-        uint8_t data = USART2->DR;
+        uint8_t data = USART1->DR;
         uint16_t next_head = (rx_head + 1) % RX_BUFFER_SIZE;
 
         if (next_head != rx_tail)
