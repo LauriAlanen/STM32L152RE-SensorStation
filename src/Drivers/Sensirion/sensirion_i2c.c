@@ -19,7 +19,7 @@ int16_t sensirion_i2c_select_bus(uint8_t bus_idx)
 
 uint8_t sensirion_i2c_init(void)
 {
-    int16_t probe, err = 0;
+    int16_t probe;
     uint8_t init_status = 1;
 
     I2C1_Init();
@@ -34,28 +34,15 @@ uint8_t sensirion_i2c_init(void)
         	break;
         }
 
-        if (probe == SGP30_ERR_UNSUPPORTED_FEATURE_SET)
-            USART2_write_buffer("Your sensor needs at least feature set version 1.0 (0x20)\r\n");
-
-        USART2_write_buffer("SGP sensor probing failed\r\n");
         sensirion_sleep_usec(1000000);
     }
 
     if(init_status)
     {
-    	return 1; // Error occured during init
+    	return 1;
     }
 
-    err = sgp30_iaq_init();
-    if (err == STATUS_OK)
-    {
-        USART2_write_buffer("sgp30_iaq_init done\r\n");
-    }
-
-    else
-    {
-        USART2_write_buffer("sgp30_iaq_init failed!\r\n");
-    }
+    sgp30_iaq_init();
 
     return 0;
 }
@@ -74,7 +61,6 @@ int8_t sensirion_i2c_read(uint8_t address, uint8_t* data, uint16_t count)
 int8_t sensirion_i2c_write(uint8_t address, const uint8_t* data, uint16_t count)
 {
     I2C1_Write(address, count, data);
-
     return 0;
 }
 

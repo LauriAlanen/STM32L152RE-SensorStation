@@ -12,7 +12,7 @@
 #include "sgp30.h"
 #include "usart.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 uint8_t frame_ready = 0;
 
@@ -125,7 +125,6 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
 {
 	MODBUS_Reading reading;
-	uint8_t buffer[100];
 
 	switch (MODBUS_Frame[0])
 	{
@@ -137,10 +136,24 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 
 		case SGP30_MODBUS_ADDRESS:
 			sgp30_modbus_read(&reading);
+#if DEBUG == 1
+			uint8_t buffer[100];
             sprintf(buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
             USART2_write_buffer(buffer);
             sprintf(buffer, "CO2eq Concentration: %dppm\r\n", reading.co2_eq_ppm);
             USART2_write_buffer(buffer);
+#endif
+
+			if (MODBUS_Frame[3] == 0x01)
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.co2_eq_ppm);
+			}
+
+			else
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.tvoc_ppb);
+			}
+
 			break;
 
 		case DHT22_MODBUS_ADDRESS:
@@ -191,12 +204,7 @@ void MODBUS_ProcessFrame(void)
     frame_ready = 0;
 }
 
-
-
 // T‰h‰n pit‰isi tehd‰ jokin parempi ratkaisu ett‰ miten dataa l‰hetet‰‰n, niin ett‰ s‰ilytet‰‰n viel‰ tarkkuus ja mahdollinein miinus merkki
-
-
-
 
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
@@ -210,7 +218,7 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 {
 	if (MODBUS_VerifyCRC(MODBUS_Frame) == MODBUS_CRC_INVALID)
 	{
-#ifdef DEBUG
+#if DEBUG == 1
 	    char debugBuffer[100];
 		snprintf(debugBuffer, 20, "%s", "Checksum error!");
 		USART2_write_buffer(debugBuffer);
