@@ -82,8 +82,8 @@ MODBUS_Status MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 
 	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 2); // Exclude the CRC itself
 
-	uint8_t CRC_lsb = (MODBUS_FrameCRC >> 8) == MODBUS_Frame[MODBUS_FRAME_SIZE - 1];
-	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
+	uint8_t CRC_lsb = (MODBUS_FrameCRC >> 8) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
+	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 1];
 	if (CRC_lsb && CRC_msb)
 	{
 		return MODBUS_CRC_VALID;
@@ -112,7 +112,11 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 
     while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
-    	USART2_write(data);
+#if DEBUG > 0
+    	uint8_t buffer[100];
+        snprintf(buffer, sizeof(buffer), "%.2x ", data);
+        USART2_write_buffer(buffer);
+#endif
     	MODBUS_Frame[frame_index++] = data;
     	if (frame_index == MODBUS_FRAME_SIZE)
     	{
@@ -137,7 +141,7 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 
 		case SGP30_MODBUS_ADDRESS:
 			sgp30_modbus_read(&reading);
-#if DEBUG == 1
+#if DEBUG > 1
 			uint8_t buffer[100];
             sprintf(buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
             USART2_write_buffer(buffer);
@@ -189,6 +193,12 @@ void MODBUS_ProcessFrame(void)
         return;
     }
 
+#if DEBUG > 0
+	uint8_t buffer[100];
+    sprintf(buffer, "Tail at %d", rx_tail);
+    USART2_write_buffer(buffer);
+#endif
+
     MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
 
     if (status == MODBUS_ADDR_VALID)
@@ -201,8 +211,8 @@ void MODBUS_ProcessFrame(void)
         MODBUS_ProcessInvalidFrame();
     }
 
-    uint8_t purge_data;
-    MODBUS_RingBufferRead(purge_data);
+    uint8_t purge_byte;
+    MODBUS_RingBufferRead(&purge_byte);
 
     frame_ready = 0;
 }
@@ -210,7 +220,7 @@ void MODBUS_ProcessFrame(void)
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
 	MODBUS_RE_TE_HIGH();
-	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 datas in this case
+	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
 	{
 		USART1_write(MODBUS_ResponseFrame[i]);
 	}
@@ -223,7 +233,7 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 {
 	if (MODBUS_VerifyCRC(MODBUS_Frame) == MODBUS_CRC_INVALID)
 	{
-#if DEBUG == 1
+#if DEBUG > 1
 	    char debugBuffer[100];
 		snprintf(debugBuffer, 20, "%s", "Checksum error!");
 		USART2_write_buffer(debugBuffer);
@@ -235,7 +245,7 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
     MODBUS_ReadSensor(MODBUS_Frame, MODBUS_ResponseFrame);
     MODBUS_TransmitResponse(MODBUS_ResponseFrame);
 
-#if DEBUG == 1
+#if DEBUG > 1
     char debugBuffer[100];
     snprintf(debugBuffer, sizeof(debugBuffer), "Generated frame:");
     USART2_write_buffer(debugBuffer);
@@ -250,13 +260,13 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 
 void MODBUS_ProcessInvalidFrame(void)
 {
-	MODBUS_ClearRingBuffer();
-
-#if DEBUG == 1
+#if DEBUG > 1
     char debugBuffer[100];
     snprintf(debugBuffer, sizeof(debugBuffer), "Invalid address!");
     USART2_write_buffer(debugBuffer);
 #endif
+
+	MODBUS_ClearRingBuffer();
 }
 
 MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
