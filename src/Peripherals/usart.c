@@ -22,6 +22,14 @@ void USART1_init(void)
 	USART1->CR1 |= 0x00002000;	//UE bit. p739-740. Uart enable
 
 	USART1->CR1 |= USART_CR1_SBK; // SBK bit. Send break enabled
+
+	USART1->CR2 = 0x00; // reset
+
+	USART1->CR3 = 0;   // Set to default state
+	USART1->CR3 |= 1;  // Enable error interrupt,  p744
+	/* Error Interrupt Enable Bit is required to enable interrupt generation in case of a framing
+	error, overrun error or noise flag (FE=1 or ORE=1 or NF=1 in the USART_SR register) in
+	case of Multi Buffer Communication (DMAR=1 in the USART_CR3 register).*/
 	USART1->CR1 |= USART_CR1_RXNEIE;			//enable RX interrupt
 	NVIC_EnableIRQ(USART1_IRQn); 	//enable interrupt in NVIC
 }
@@ -54,6 +62,11 @@ void USART1_write_buffer(uint8_t* buffer)
 
 void USART1_IRQHandler(void)
 {
+    //if (USART1->SR & USART_SR_RXNE)
+    //{
+    //    uint8_t data = USART1->DR;
+    //	USART2_write(data);
+    //}
 	MODBUS_IRQHandler();
 }
 

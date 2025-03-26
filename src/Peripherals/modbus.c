@@ -13,9 +13,9 @@
 #include "usart.h"
 #include "gpio.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
-uint8_t frame_ready = 0;
+volatile uint8_t frame_ready = 0;
 
 // Ring buffer
 volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
@@ -24,7 +24,7 @@ volatile uint16_t rx_head = 0, rx_tail = 0;
 
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, SGP30_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
 
-//parameter wLenght = how my bytes in your frame?
+//parameter wLenght = how my datas in your frame?
 //*nData = your first element in frame array
 uint16_t CRC16(uint8_t *nData, uint16_t wLength)
 {
@@ -108,17 +108,18 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
 void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 {
 	static uint8_t frame_index = 0;
-	uint8_t byte;
+	uint8_t data;
 
-    while (MODBUS_RingBufferRead(&byte) == MODBUS_RINGBUFFER_NOT_EMPTY)
+    while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
-    	MODBUS_Frame[frame_index++] = byte;
-    	if (frame_index >= MODBUS_FRAME_SIZE)
+    	MODBUS_Frame[frame_index++] = data;
+    	if (frame_index == MODBUS_FRAME_SIZE)
     	{
     		frame_ready = 1;
     		frame_index = 0;
 		}
     }
+
 }
 
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
@@ -202,15 +203,16 @@ void MODBUS_ProcessFrame(void)
     frame_ready = 0;
 }
 
-// T‰h‰n pit‰isi tehd‰ jokin parempi ratkaisu ett‰ miten dataa l‰hetet‰‰n, niin ett‰ s‰ilytet‰‰n viel‰ tarkkuus ja mahdollinein miinus merkki
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
 	MODBUS_RE_TE_HIGH();
-	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
+	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 datas in this case
 	{
 		USART1_write(MODBUS_ResponseFrame[i]);
 	}
 	MODBUS_RE_TE_LOW();
+
+	return MODBUS_FRAME_OK;
 }
 
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
@@ -244,6 +246,8 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 
 void MODBUS_ProcessInvalidFrame(void)
 {
+	MODBUS_ClearRingBuffer();
+
 #if DEBUG == 1
     char debugBuffer[100];
     snprintf(debugBuffer, sizeof(debugBuffer), "Invalid address!");
@@ -263,13 +267,33 @@ MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
     return MODBUS_RINGBUFFER_NOT_EMPTY;
 }
 
+MODBUS_Status MODBUS_ClearRingBuffer()
+{
+	while (rx_head != rx_tail)
+	{
+		uint8_t data = rx_buffer[rx_tail];
+
+		MODBUS_RingBufferRead(&data);
+
+		rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
+	}
+
+	if (buffer_OVF)
+	{
+		//MODBUS_HandleOverflow();
+		buffer_OVF = 0;
+	}
+
+	return MODBUS_FRAME_OK;
+}
+
 MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading)
 {
 	uint16_t MODBUS_FrameCRC = 0x0000;
 
 	MODBUS_Frame[0] = slave_addr;
 	MODBUS_Frame[1] = MODBUS_READ_INPUT_REG;
-	MODBUS_Frame[2] = 0x02; // Send 2 bytes
+	MODBUS_Frame[2] = 0x02;
 
 	MODBUS_Frame[3] = reading >> 8;
 	MODBUS_Frame[4] = reading & 0x00FF;
