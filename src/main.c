@@ -43,7 +43,6 @@ int main(void)
     while (1)
     {
 		MODBUS_ProcessFrame();
-		delay_ms(1);
     }
 
     return 0;
