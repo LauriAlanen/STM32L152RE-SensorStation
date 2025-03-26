@@ -112,6 +112,7 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 
     while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
+    	USART2_write(data);
     	MODBUS_Frame[frame_index++] = data;
     	if (frame_index == MODBUS_FRAME_SIZE)
     	{
@@ -199,6 +200,9 @@ void MODBUS_ProcessFrame(void)
     {
         MODBUS_ProcessInvalidFrame();
     }
+
+    uint8_t purge_data;
+    MODBUS_RingBufferRead(purge_data);
 
     frame_ready = 0;
 }
