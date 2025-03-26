@@ -38,11 +38,12 @@ int main(void)
 	//DHT22_init();
     sensirion_i2c_init();
 
+	MODBUS_RE_TE_LOW();
+
     while (1)
     {
 		MODBUS_ProcessFrame();
 		delay_ms(1);
-
     }
     return 0;
 }

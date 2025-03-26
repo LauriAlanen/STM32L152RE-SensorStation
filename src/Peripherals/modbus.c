@@ -11,6 +11,7 @@
 #include "nsl19m51.h"
 #include "sgp30.h"
 #include "usart.h"
+#include "gpio.h"
 
 #define DEBUG 1
 
@@ -97,12 +98,10 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
     {
         if (MODBUS_Slaves[i] == address)
         {
-        	LED_BUILTIN_HIGH();
             return MODBUS_ADDR_VALID;
         }
     }
 
-    LED_BUILTIN_LOW();
 	return MODBUS_ADDR_INVALID;
 }
 
@@ -188,7 +187,6 @@ void MODBUS_ProcessFrame(void)
         return;
     }
 
-    LED_BUILTIN_HIGH();
     MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
 
     if (status == MODBUS_ADDR_VALID)
