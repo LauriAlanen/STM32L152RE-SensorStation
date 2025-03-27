@@ -40,6 +40,7 @@ typedef struct MODBUS_Reading {
 	uint16_t lux;
     uint16_t tvoc_ppb;
     uint16_t co2_eq_ppm;
+    uint8_t raw_reading[4];
 } MODBUS_Reading;
 
 void MODBUS_IRQHandler();
@@ -54,7 +55,8 @@ MODBUS_Status MODBUS_ClearRingBuffer();
 MODBUS_Status MODBUS_CheckAddress(uint8_t address);
 MODBUS_Status MODBUS_VerifyCRC(uint8_t *MODBUS_Frame);
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame);
-MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading);
+MODBUS_Status MODBUS_Build_ResponseFrameReading(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading);
+MODBUS_Status MODBUS_Build_ResponseFrameRaw(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint8_t raw_data1, uint8_t raw_data2);
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame);
 
 #endif /* PERIPHERALS_MODBUS_H_ */

@@ -13,7 +13,7 @@
 #include "usart.h"
 #include "gpio.h"
 
-#define DEBUG 0
+#define DEBUG 2
 
 volatile uint8_t frame_ready = 0;
 
@@ -178,12 +178,12 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 
 			if (MODBUS_Frame[3] == 0x01)
 			{
-				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.co2_eq_ppm);
+				MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.co2_eq_ppm);
 			}
 
 			else
 			{
-				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.tvoc_ppb);
+				MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.tvoc_ppb);
 			}
 
 			break;
@@ -193,12 +193,12 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 
 			if (MODBUS_Frame[3] == 0x01)
 			{
-				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.humidity);
+				MODBUS_Build_ResponseFrameRaw(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[0], reading.raw_reading[1]);
 			}
 
 			else
 			{
-				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.temperature);
+				MODBUS_Build_ResponseFrameRaw(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[2], reading.raw_reading[3]);
 			}
 
 			break;
@@ -326,7 +326,7 @@ MODBUS_Status MODBUS_ClearRingBuffer()
 	return MODBUS_FRAME_OK;
 }
 
-MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading)
+MODBUS_Status MODBUS_Build_ResponseFrameReading(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading)
 {
 	uint16_t MODBUS_FrameCRC = 0x0000;
 
@@ -336,6 +336,24 @@ MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_ad
 
 	MODBUS_Frame[3] = reading >> 8;
 	MODBUS_Frame[4] = reading & 0x00FF;
+
+	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 3);
+	MODBUS_Frame[5] = MODBUS_FrameCRC & 0x00FF;
+	MODBUS_Frame[6] = MODBUS_FrameCRC >> 8;
+
+	return MODBUS_FRAME_OK;
+}
+
+MODBUS_Status MODBUS_Build_ResponseFrameRaw(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint8_t raw_data1, uint8_t raw_data2)
+{
+	uint16_t MODBUS_FrameCRC = 0x0000;
+
+	MODBUS_Frame[0] = slave_addr;
+	MODBUS_Frame[1] = MODBUS_READ_INPUT_REG;
+	MODBUS_Frame[2] = 0x02;
+
+	MODBUS_Frame[3] = raw_data1;
+	MODBUS_Frame[4] = raw_data2;
 
 	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 3);
 	MODBUS_Frame[5] = MODBUS_FrameCRC & 0x00FF;
