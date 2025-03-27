@@ -24,7 +24,7 @@ volatile uint16_t rx_head = 0, rx_tail = 0;
 
 uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, SGP30_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
 
-//parameter wLenght = how my datas in your frame?
+//parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
 uint16_t CRC16(uint8_t *nData, uint16_t wLength)
 {
@@ -112,19 +112,34 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 
     while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
+
 #if DEBUG > 0
     	uint8_t buffer[100];
         snprintf(buffer, sizeof(buffer), "%.2x ", data);
         USART2_write_buffer(buffer);
 #endif
+
+		if (frame_index == 0)
+        {
+            if (MODBUS_CheckAddress(data) != MODBUS_ADDR_VALID)
+            {
+#if DEBUG > 0
+                USART2_write_buffer("Invalid start byte, skipping\n");
+#endif
+                continue;
+            }
+        }
+
     	MODBUS_Frame[frame_index++] = data;
+
     	if (frame_index == MODBUS_FRAME_SIZE)
     	{
     		frame_ready = 1;
     		frame_index = 0;
+    		break;
 		}
-    }
 
+    }
 }
 
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
