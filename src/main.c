@@ -4,21 +4,23 @@
 
 #include "adc.h"
 #include "usart.h"
+#include "gpio.h"
+#include "modbus.h"
+
 #include "lmt84lp.h"
 #include "nsl19m51.h"
 #include "dht22.h"
-#include "gpio.h"
+#include "sgp30.h"
+
 #include "timing.h"
 #include "timers.h"
-#include "modbus.h"
+
 #include <stdio.h>
 
 #define BUFFER_SIZE 50
 
 int main(void)
 {
-	// CMSIS Initializations
-
 	SetSysClock();
 	SystemCoreClockUpdate();
 
@@ -26,19 +28,22 @@ int main(void)
 
 	// Peripheral Initializations
 	GPIO_init();
+	USART1_init();
 	USART2_init();
 	TIM2_Init();
 
 	// Sensor Initializations
 	//LMT84LP_init();
 	//NSL19M51_init();
-	DHT22_init();
-	//ADC_init();
+	//DHT22_init();
+    sensirion_i2c_init();
 
-	while (1)
-	{
+	MODBUS_RE_TE_LOW();
+
+    while (1)
+    {
 		MODBUS_ProcessFrame();
-		delay_ms(1);
-	}
-	return 0;
+    }
+
+    return 0;
 }

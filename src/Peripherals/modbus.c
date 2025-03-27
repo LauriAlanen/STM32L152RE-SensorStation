@@ -7,17 +7,22 @@
 
 #include "modbus.h"
 #include "dht22.h"
+#include "lmt84lp.h"
+#include "nsl19m51.h"
+#include "sgp30.h"
+#include "usart.h"
+#include "gpio.h"
 
 #define DEBUG 0
 
-uint8_t frame_ready = 0;
+volatile uint8_t frame_ready = 0;
 
 // Ring buffer
 volatile uint8_t rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t buffer_OVF = 0;
 volatile uint16_t rx_head = 0, rx_tail = 0;
 
-uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
+uint8_t MODBUS_Slaves[SLAVE_COUNT] = {LMT84LP_MODBUS_ADDRESS, NSL19M51_MODBUS_ADDRESS, SGP30_MODBUS_ADDRESS, DHT22_MODBUS_ADDRESS};
 
 //parameter wLenght = how my bytes in your frame?
 //*nData = your first element in frame array
@@ -77,8 +82,8 @@ MODBUS_Status MODBUS_VerifyCRC(uint8_t *MODBUS_Frame)
 
 	MODBUS_FrameCRC = CRC16(MODBUS_Frame, MODBUS_FRAME_SIZE - 2); // Exclude the CRC itself
 
-	uint8_t CRC_lsb = (MODBUS_FrameCRC >> 8) == MODBUS_Frame[MODBUS_FRAME_SIZE - 1];
-	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
+	uint8_t CRC_lsb = (MODBUS_FrameCRC >> 8) == MODBUS_Frame[MODBUS_FRAME_SIZE - 2];
+	uint8_t CRC_msb = (MODBUS_FrameCRC & 0x00FF) == MODBUS_Frame[MODBUS_FRAME_SIZE - 1];
 	if (CRC_lsb && CRC_msb)
 	{
 		return MODBUS_CRC_VALID;
@@ -93,29 +98,60 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
     {
         if (MODBUS_Slaves[i] == address)
         {
-            GPIOA->ODR |= GPIO_ODR_ODR_5;
             return MODBUS_ADDR_VALID;
+        }
+
+        else if (address == MODBUS_CLEAR_BUFFER_REG)
+        {
+        	return MODBUS_RINGBUFFER_CLEAR;
         }
     }
 
-    GPIOA->ODR &= ~GPIO_ODR_ODR_5;
-    return MODBUS_ADDR_INVALID;
+	return MODBUS_ADDR_INVALID;
 }
 
-void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
+MODBUS_Status MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 {
 	static uint8_t frame_index = 0;
-	uint8_t byte;
+	uint8_t data;
 
-    while (MODBUS_RingBufferRead(&byte) == MODBUS_RINGBUFFER_NOT_EMPTY)
+    while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
-    	MODBUS_Frame[frame_index++] = byte;
-    	if (frame_index >= MODBUS_FRAME_SIZE)
+
+#if DEBUG == 1
+    	uint8_t buffer[100];
+        snprintf(buffer, sizeof(buffer), "%.2x ", data);
+        USART2_write_buffer(buffer);
+#endif
+
+		if (frame_index == 0)
+        {
+			MODBUS_Status status = MODBUS_CheckAddress(data);
+            if (status == MODBUS_RINGBUFFER_CLEAR)
+            {
+        		return MODBUS_RINGBUFFER_CLEAR;
+            }
+
+            else if (status == MODBUS_ADDR_INVALID)
+            {
+#if DEBUG > 0
+                USART2_write_buffer("Invalid start byte, skipping\n");
+#endif
+                continue;
+            }
+        }
+
+    	MODBUS_Frame[frame_index++] = data;
+
+    	if (frame_index == MODBUS_FRAME_SIZE)
     	{
     		frame_ready = 1;
     		frame_index = 0;
+    		return MODBUS_ADDR_VALID;
 		}
     }
+
+    return MODBUS_FRAME_NOT_READY;
 }
 
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
@@ -128,6 +164,28 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 			break;
 
 		case NSL19M51_MODBUS_ADDRESS:
+			break;
+
+		case SGP30_MODBUS_ADDRESS:
+			sgp30_modbus_read(&reading);
+#if DEBUG > 1
+			uint8_t buffer[100];
+            sprintf(buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
+            USART2_write_buffer(buffer);
+            sprintf(buffer, "CO2eq Concentration: %dppm\r\n", reading.co2_eq_ppm);
+            USART2_write_buffer(buffer);
+#endif
+
+			if (MODBUS_Frame[3] == 0x01)
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.co2_eq_ppm);
+			}
+
+			else
+			{
+				MODBUS_Build_ResponseFrame(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.tvoc_ppb);
+			}
+
 			break;
 
 		case DHT22_MODBUS_ADDRESS:
@@ -155,15 +213,25 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 void MODBUS_ProcessFrame(void)
 {
 	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-    MODBUS_ReadFrame(MODBUS_Frame);
+	MODBUS_Status status = MODBUS_ReadFrame(MODBUS_Frame);
 
     if (!frame_ready)
     {
+        if (status == MODBUS_RINGBUFFER_CLEAR)
+        {
+    #if DEBUG > 1
+            	USART2_write_buffer("Clearing Ring Buffer");
+    #endif
+                	MODBUS_ClearRingBuffer();
+        }
         return;
     }
 
-    GPIOA->ODR |= GPIO_ODR_ODR_5;
-    MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
+#if DEBUG > 0
+	uint8_t buffer[100];
+    sprintf(buffer, "Tail at %d", rx_tail);
+    USART2_write_buffer(buffer);
+#endif
 
     if (status == MODBUS_ADDR_VALID)
     {
@@ -175,29 +243,29 @@ void MODBUS_ProcessFrame(void)
         MODBUS_ProcessInvalidFrame();
     }
 
+    uint8_t purge_byte;
+    MODBUS_RingBufferRead(&purge_byte);
+
     frame_ready = 0;
 }
 
-
-
-// T‰h‰n pit‰isi tehd‰ jokin parempi ratkaisu ett‰ miten dataa l‰hetet‰‰n, niin ett‰ s‰ilytet‰‰n viel‰ tarkkuus ja mahdollinein miinus merkki
-
-
-
-
 MODBUS_Status MODBUS_TransmitResponse(uint8_t* MODBUS_ResponseFrame)
 {
+	MODBUS_RE_TE_HIGH();
 	for (int i = 0; i < MODBUS_FRAME_SIZE - 1; ++i) // Response frame is always 7 bytes in this case
 	{
-		USART2_write(MODBUS_ResponseFrame[i]);
+		USART1_write(MODBUS_ResponseFrame[i]);
 	}
+	MODBUS_RE_TE_LOW();
+
+	return MODBUS_FRAME_OK;
 }
 
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 {
 	if (MODBUS_VerifyCRC(MODBUS_Frame) == MODBUS_CRC_INVALID)
 	{
-#ifdef DEBUG
+#if DEBUG > 1
 	    char debugBuffer[100];
 		snprintf(debugBuffer, 20, "%s", "Checksum error!");
 		USART2_write_buffer(debugBuffer);
@@ -209,7 +277,7 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
     MODBUS_ReadSensor(MODBUS_Frame, MODBUS_ResponseFrame);
     MODBUS_TransmitResponse(MODBUS_ResponseFrame);
 
-#if DEBUG == 1
+#if DEBUG > 1
     char debugBuffer[100];
     snprintf(debugBuffer, sizeof(debugBuffer), "Generated frame:");
     USART2_write_buffer(debugBuffer);
@@ -224,11 +292,13 @@ void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame)
 
 void MODBUS_ProcessInvalidFrame(void)
 {
-#if DEBUG == 1
+#if DEBUG > 1
     char debugBuffer[100];
     snprintf(debugBuffer, sizeof(debugBuffer), "Invalid address!");
     USART2_write_buffer(debugBuffer);
 #endif
+
+	MODBUS_ClearRingBuffer();
 }
 
 MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
@@ -243,13 +313,26 @@ MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
     return MODBUS_RINGBUFFER_NOT_EMPTY;
 }
 
+MODBUS_Status MODBUS_ClearRingBuffer()
+{
+    rx_tail = rx_head;
+
+	if (buffer_OVF)
+	{
+		//MODBUS_HandleOverflow();
+		buffer_OVF = 0;
+	}
+
+	return MODBUS_FRAME_OK;
+}
+
 MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_addr, uint16_t reading)
 {
 	uint16_t MODBUS_FrameCRC = 0x0000;
 
 	MODBUS_Frame[0] = slave_addr;
 	MODBUS_Frame[1] = MODBUS_READ_INPUT_REG;
-	MODBUS_Frame[2] = 0x02; // Send 2 bytes
+	MODBUS_Frame[2] = 0x02;
 
 	MODBUS_Frame[3] = reading >> 8;
 	MODBUS_Frame[4] = reading & 0x00FF;
@@ -263,9 +346,9 @@ MODBUS_Status MODBUS_Build_ResponseFrame(uint8_t* MODBUS_Frame, uint8_t slave_ad
 
 void MODBUS_IRQHandler()
 {
-    if (USART2->SR & USART_SR_RXNE)
+    if (USART1->SR & USART_SR_RXNE)
     {
-        uint8_t data = USART2->DR;
+        uint8_t data = USART1->DR;
         uint16_t next_head = (rx_head + 1) % RX_BUFFER_SIZE;
 
         if (next_head != rx_tail)
