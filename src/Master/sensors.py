@@ -1,3 +1,5 @@
+import time
+from time import sleep
 import serial
 
 
@@ -55,7 +57,6 @@ class SGP30(Sensor):
     @staticmethod
     def convert(modbus_frame: bytearray) -> int:
         """Converts raw data to CO2 (ppm) and VOC (ppb)"""
-        # Received b'\x05\x04\x02\x01\xa4'
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
 
@@ -63,3 +64,44 @@ class SGP30(Sensor):
         raw_value = (msb << 8) | lsb
 
         return raw_value
+
+
+class DHT22(Sensor):
+    def __init__(self, name):
+        self.name = name
+        self.temperature_request_frame = bytearray(
+            [0x06, 0x04, 0x00, 0x01, 0x00, 0x01, 0xBD, 0x61])
+        self.humidity_request_frame = bytearray(
+            [0x06, 0x04, 0x00, 0x02, 0x00, 0x01, 0xBD, 0x91])
+        self.last_read_time = None  # Track last read timestamp
+
+    def read(self, serial_port: serial.Serial, option: int) -> int:
+        # Enforce cooldown if this is not the first read
+        if self.last_read_time is not None:
+            elapsed_time = time.time() - self.last_read_time
+            if elapsed_time < 0.5:
+                # Wait for remaining cooldown time
+                time.sleep(0.5 - elapsed_time)
+
+        if option == 0:
+            value = self.read_sensor(
+                serial_port, self.temperature_request_frame, self.convert)
+        else:
+            value = self.read_sensor(
+                serial_port, self.humidity_request_frame, self.convert)
+
+        # Update last read timestamp
+        self.last_read_time = time.time()
+        return value
+
+    @staticmethod
+    def convert(modbus_frame: bytearray) -> int:
+        """Converts raw data to uint16_t value."""
+        msb = modbus_frame[3]
+        lsb = modbus_frame[4]
+
+        # Reconstruct the raw value
+        raw_value = (msb << 8) | lsb
+
+        encoded_value = ((raw_value // 10) << 8) | (raw_value % 10)
+        return encoded_value
