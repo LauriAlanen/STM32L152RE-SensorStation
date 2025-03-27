@@ -16,6 +16,7 @@
 #define RX_BUFFER_SIZE 128
 
 #define MODBUS_READ_INPUT_REG 0x04
+#define MODBUS_CLEAR_BUFFER_REG 0xFF
 
 typedef enum {
     MODBUS_ADDR_INVALID = 0,
@@ -28,7 +29,9 @@ typedef enum {
 	MODBUS_FRAME_ERR = 7,
 	MODBUS_RINGBUFFER_EMPTY = 8,
 	MODBUS_RINGBUFFER_NOT_EMPTY = 9,
-	MODBUS_RESPONSE_FRAME_OK = 10
+	MODBUS_RINGBUFFER_CLEAR = 10,
+	MODBUS_RESPONSE_FRAME_OK = 11,
+	MODBUS_FRAME_NOT_READY = 12
 } MODBUS_Status;
 
 typedef struct MODBUS_Reading {
@@ -44,7 +47,7 @@ void MODBUS_ProcessFrame();
 void MODBUS_DiscardFrame();
 void MODBUS_ProcessValidFrame(uint8_t *MODBUS_Frame);
 void MODBUS_ProcessInvalidFrame();
-void MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
+MODBUS_Status MODBUS_ReadFrame(uint8_t *MODBUS_Frame);
 uint16_t CRC16(uint8_t *nData, uint16_t wLength);
 MODBUS_Status MODBUS_RingBufferRead(uint8_t *data);
 MODBUS_Status MODBUS_ClearRingBuffer();

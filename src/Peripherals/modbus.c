@@ -100,12 +100,17 @@ MODBUS_Status MODBUS_CheckAddress(uint8_t address)
         {
             return MODBUS_ADDR_VALID;
         }
+
+        else if (address == MODBUS_CLEAR_BUFFER_REG)
+        {
+        	return MODBUS_RINGBUFFER_CLEAR;
+        }
     }
 
 	return MODBUS_ADDR_INVALID;
 }
 
-void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
+MODBUS_Status MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 {
 	static uint8_t frame_index = 0;
 	uint8_t data;
@@ -113,7 +118,7 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
     while (MODBUS_RingBufferRead(&data) == MODBUS_RINGBUFFER_NOT_EMPTY)
     {
 
-#if DEBUG > 0
+#if DEBUG == 1
     	uint8_t buffer[100];
         snprintf(buffer, sizeof(buffer), "%.2x ", data);
         USART2_write_buffer(buffer);
@@ -121,7 +126,13 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
 
 		if (frame_index == 0)
         {
-            if (MODBUS_CheckAddress(data) != MODBUS_ADDR_VALID)
+			MODBUS_Status status = MODBUS_CheckAddress(data);
+            if (status == MODBUS_RINGBUFFER_CLEAR)
+            {
+        		return MODBUS_RINGBUFFER_CLEAR;
+            }
+
+            else if (status == MODBUS_ADDR_INVALID)
             {
 #if DEBUG > 0
                 USART2_write_buffer("Invalid start byte, skipping\n");
@@ -136,10 +147,11 @@ void MODBUS_ReadFrame(uint8_t *MODBUS_Frame)
     	{
     		frame_ready = 1;
     		frame_index = 0;
-    		break;
+    		return MODBUS_ADDR_VALID;
 		}
-
     }
+
+    return MODBUS_FRAME_NOT_READY;
 }
 
 MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseFrame)
@@ -201,10 +213,17 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 void MODBUS_ProcessFrame(void)
 {
 	static uint8_t MODBUS_Frame[MODBUS_FRAME_SIZE];
-    MODBUS_ReadFrame(MODBUS_Frame);
+	MODBUS_Status status = MODBUS_ReadFrame(MODBUS_Frame);
 
     if (!frame_ready)
     {
+        if (status == MODBUS_RINGBUFFER_CLEAR)
+        {
+    #if DEBUG > 1
+            	USART2_write_buffer("Clearing Ring Buffer");
+    #endif
+                	MODBUS_ClearRingBuffer();
+        }
         return;
     }
 
@@ -213,8 +232,6 @@ void MODBUS_ProcessFrame(void)
     sprintf(buffer, "Tail at %d", rx_tail);
     USART2_write_buffer(buffer);
 #endif
-
-    MODBUS_Status status = MODBUS_CheckAddress(MODBUS_Frame[0]);
 
     if (status == MODBUS_ADDR_VALID)
     {
@@ -298,14 +315,7 @@ MODBUS_Status MODBUS_RingBufferRead(uint8_t *data)
 
 MODBUS_Status MODBUS_ClearRingBuffer()
 {
-	while (rx_head != rx_tail)
-	{
-		uint8_t data = rx_buffer[rx_tail];
-
-		MODBUS_RingBufferRead(&data);
-
-		rx_tail = (rx_tail + 1) % RX_BUFFER_SIZE;
-	}
+    rx_tail = rx_head;
 
 	if (buffer_OVF)
 	{
