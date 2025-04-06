@@ -8,7 +8,6 @@
 
 #include "nsl19m51.h"
 #include "adc.h"
-#include <stdio.h>
 #include <math.h>
 
 // PIN PA1
@@ -19,7 +18,7 @@ void NSL19M51_init()
 	GPIOA->MODER |= GPIO_MODER_MODER1;
 }
 
-void NSL19M51_read(NSL19M51_Reading *reading)
+void NSL19M51_read(MODBUS_Reading *reading)
 {
 	int adc_result = 0;
 
@@ -29,18 +28,14 @@ void NSL19M51_read(NSL19M51_Reading *reading)
 
 	while(!(ADC1->SR & ADC_SR_EOC)){}
 
-	adc_result = ADC1->DR;
+	reading->raw_reading = ADC1->DR;
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;
-
-	float voltage = ADC_STEP_SIZE_U * adc_result;
-	float lux = 1.9634f * exp(2.1281f * voltage);
-
-	reading->lux_int = (uint8_t)lux;
-	reading->lux_dec = (uint8_t)((lux - reading->lux_int) * 100);
 }
 
-void NSL19M51_ModbusHandler()
+void NSL19M51_ModbusHandler(MODBUS_Reading *reading)
 {
+	NSL19M51_read(reading);
+	
 	return;
 }

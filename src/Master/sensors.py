@@ -1,7 +1,7 @@
 import time
 from time import sleep
 import serial
-
+import math
 
 class Sensor:
     """
@@ -105,3 +105,33 @@ class DHT22(Sensor):
 
         encoded_value = ((raw_value // 10) << 8) | (raw_value % 10)
         return encoded_value
+
+class NS1L9M51(Sensor):
+
+    def __init__(self, name):
+        self.name = name
+        self.request_frame = bytearray(
+            [0x05, 0x04, 0x00, 0x01, 0x00, 0x01, 0x8E, 0x61])
+        
+    def read(self, serial_port: serial.Serial, option: int) -> int:
+
+        return self.read_sensor(serial_port, self.voc_request_frame, self.convert)
+
+    @staticmethod
+    def convert(modbus_frame: bytearray) -> dict:
+        msb = modbus_frame[3]
+        lsb = modbus_frame[4]
+
+        ADC_STEP_SIZE_U = 3.3 / 4095 
+
+        # Reconstruct the uint16_t value
+        adc_result = (msb << 8) | lsb
+
+        # Apply the voltage and lux calculation
+        voltage = ADC_STEP_SIZE_U * adc_result
+        lux = 1.9634 * math.exp(2.1281 * voltage)
+
+        lux_int = int(lux)
+        lux_dec = int((lux - lux_int) * 100)
+
+        return lux
