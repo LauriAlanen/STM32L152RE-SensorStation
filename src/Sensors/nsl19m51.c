@@ -28,7 +28,7 @@ void NSL19M51_read(MODBUS_Reading *reading)
 
 	while(!(ADC1->SR & ADC_SR_EOC)){}
 
-	reading->raw_reading = ADC1->DR;
+	reading->raw_reading[0] = ADC1->DR;
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;
 }
@@ -36,6 +36,4 @@ void NSL19M51_read(MODBUS_Reading *reading)
 void NSL19M51_ModbusHandler(MODBUS_Reading *reading)
 {
 	NSL19M51_read(reading);
-	
-	return;
 }

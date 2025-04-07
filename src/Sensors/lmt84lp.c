@@ -26,9 +26,9 @@ void LMT84LP_init()
 	GPIOA->MODER |= GPIO_MODER_MODER0;
 }
 
-void LMT84LP_read(LMT84LP_Reading *reading)
+void LMT84LP_read(MODBUS_Reading *reading)
 {
-	int adc_result = 0;
+	uint16_t adc_result = 0;
 
 	ADC1->SQR5 |= 0; // Start at channel zero
 	ADC1->CR2 |= ADC_CR2_ADON;
@@ -36,19 +36,20 @@ void LMT84LP_read(LMT84LP_Reading *reading)
 
 	while(!(ADC1->SR & ADC_SR_EOC)){}
 
-	adc_result = ADC1->DR;
+	reading->temperature = ADC1->DR;
+
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;
 
-	float voltage = ADC_STEP_SIZE_U * adc_result;
-	float temperature = ((voltage - U_MIN) / (U_MAX - U_MIN)) * (T_MAX - T_MIN) + T_MIN;
+	//float voltage = ADC_STEP_SIZE_U * adc_result;
+	//float temperature = ((voltage - U_MIN) / (U_MAX - U_MIN)) * (T_MAX - T_MIN) + T_MIN;
 
 	// Does this work?
-	reading->temperature_int = (uint8_t)temperature;
-	reading->temperature_dec = (uint8_t)((temperature - reading->temperature_int) * 100);
+	//reading->temperature_int = (uint8_t)temperature;
+	//reading->temperature_dec = (uint8_t)((temperature - reading->temperature_int) * 100);
 }
 
-void LMT84LP_ModbusHander()
+void LMT84LP_ModbusHander(MODBUS_Reading *reading)
 {
-	return;
+	LMT84LP_read(reading);
 }

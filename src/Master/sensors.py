@@ -3,11 +3,12 @@ from time import sleep
 import serial
 import math
 
+ADC_STEP_SIZE_U = 3.3 / 4095 
+
 class Sensor:
     """
     A base class for sensors that provides a generic read method.
     """
-
     @staticmethod
     def read_sensor(serial_port: serial.Serial, request_frame: bytearray, convert_method) -> int:
         """
@@ -107,7 +108,6 @@ class DHT22(Sensor):
         return encoded_value
 
 class NS1L9M51(Sensor):
-
     def __init__(self, name):
         self.name = name
         self.request_frame = bytearray(
@@ -122,7 +122,6 @@ class NS1L9M51(Sensor):
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
 
-        ADC_STEP_SIZE_U = 3.3 / 4095 
 
         # Reconstruct the uint16_t value
         adc_result = (msb << 8) | lsb
@@ -135,3 +134,36 @@ class NS1L9M51(Sensor):
         lux_dec = int((lux - lux_int) * 100)
 
         return lux
+    
+    
+class LMT84LP(Sensor):
+    def __init__(self, name):
+        self.name = name
+        self.request_frame = bytearray(
+            [0x01, 0x04, 0x00, 0x01, 0x00, 0x01, 0x0A, 0x60])
+        
+    def read(self, serial_port: serial.Serial, option: int) -> int:
+        return self.read_sensor(serial_port, self.request_frame, self.convert)
+
+    @staticmethod
+    def convert(modbus_frame: bytearray) -> dict:
+        # Constants from the C code
+        T_MAX = 150.0
+        T_MIN = -50.0
+        U_MIN = 1.299
+        U_MAX = 0.183
+
+        # Extract ADC result from modbus_frame
+        msb = modbus_frame[3]
+        lsb = modbus_frame[4]
+
+        # Combine MSB and LSB to get the ADC result (16-bit value)
+        adc_result = (msb << 8) | lsb
+
+        # Calculate the voltage (assuming ADC_STEP_SIZE_U is known)
+        voltage = ADC_STEP_SIZE_U * adc_result
+
+        # Calculate the temperature using the given formula
+        temperature = ((voltage - U_MIN) / (U_MAX - U_MIN)) * (T_MAX - T_MIN) + T_MIN
+        
+        return temperature

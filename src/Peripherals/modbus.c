@@ -161,6 +161,8 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 	switch (MODBUS_Frame[0])
 	{
 		case LMT84LP_MODBUS_ADDRESS:
+			LMT84LP_ModbusHander(&reading);
+			MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.temperature);
 			break;
 
 		case NSL19M51_MODBUS_ADDRESS:
@@ -169,11 +171,11 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 		case SGP30_MODBUS_ADDRESS:
 			sgp30_modbus_read(&reading);
 #if DEBUG > 1
-			uint8_t buffer[100];
-            sprintf(buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
-            USART2_write_buffer(buffer);
-            sprintf(buffer, "CO2eq Concentration: %dppm\r\n", reading.co2_eq_ppm);
-            USART2_write_buffer(buffer);
+			uint8_t debug_buffer[100];
+            sprintf(debug_buffer, "tVOC  Concentration: %dppb\r\n", reading.tvoc_ppb);
+            USART2_write_buffer(debug_buffer);
+            sprintf(debug_buffer, "CO2eq Concentration: %dppm\r\n", reading.co2_eq_ppm);
+            USART2_write_buffer(debug_buffer);
 #endif
 
 			if (MODBUS_Frame[3] == 0x01)
@@ -219,9 +221,9 @@ void MODBUS_ProcessFrame(void)
     {
         if (status == MODBUS_RINGBUFFER_CLEAR)
         {
-    #if DEBUG > 1
+#if DEBUG > 1
             	USART2_write_buffer("Clearing Ring Buffer");
-    #endif
+#endif
                 	MODBUS_ClearRingBuffer();
         }
         return;

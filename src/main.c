@@ -31,12 +31,13 @@ int main(void)
 	USART1_init();
 	USART2_init();
 	TIM2_Init();
+	ADC_init();
 
 	// Sensor Initializations
-	//LMT84LP_init();
+	LMT84LP_init();
 	//NSL19M51_init();
 	//DHT22_init();
-    sensirion_i2c_init();
+    //sensirion_i2c_init();
 
 	MODBUS_RE_TE_LOW();
 
