@@ -37,7 +37,7 @@ int main(void)
 	LMT84LP_init();
 	//NSL19M51_init();
 	//DHT22_init();
-    //sensirion_i2c_init();
+    sensirion_i2c_init();
 
 	MODBUS_RE_TE_LOW();
 

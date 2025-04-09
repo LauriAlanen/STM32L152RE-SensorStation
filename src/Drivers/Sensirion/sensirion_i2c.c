@@ -24,6 +24,7 @@ uint8_t sensirion_i2c_init(void)
 
     I2C1_Init();
 
+	USART2_write_buffer("SGP30: Probing...");
     for (int i = 0; i < SGP30_CONN_RETRIES; ++i)
     {
         probe = sgp30_probe();
@@ -33,16 +34,19 @@ uint8_t sensirion_i2c_init(void)
         	init_status = 0;
         	break;
         }
-
+        USART2_write_buffer("...");
         sensirion_sleep_usec(1000000);
     }
+    USART2_write_buffer("\n");
 
     if(init_status)
     {
+    	USART2_write_buffer("SGP30: Init Error!\n");
     	return 1;
     }
 
     sgp30_iaq_init();
+	USART2_write_buffer("SGP30: Init Success!\n");
 
     return 0;
 }

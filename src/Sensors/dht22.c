@@ -70,18 +70,18 @@ uint8_t DHT22_read(MODBUS_Reading *reading)
 		uint8_t temperature_int = byte_list[2];
 		uint8_t temperature_dec = byte_list[3];
 		uint8_t checksum = byte_list[4];
-
-		reading->raw_reading[0] = humidity_int;
-		reading->raw_reading[1] = humidity_dec;
-		reading->raw_reading[2] = temperature_int;
-		reading->raw_reading[3] = temperature_dec;
+		uint16_t humidity = (humidity_int << 8) | humidity_dec;
+		uint16_t temperature = (temperature_int << 8) | temperature_dec;
 
 		uint8_t expected_checksum = humidity_int + humidity_dec + temperature_int + temperature_dec;
 		if (expected_checksum != checksum)
 		{
-			snprintf(buffer, 100, "Invalid checksum expected %.2X got %.2X", expected_checksum, checksum);
+			snprintf(buffer, 100, "DHT22: Invalid checksum expected %.2X got %.2X", expected_checksum, checksum);
 			USART2_write_buffer(buffer);
 		}
+
+		reading->raw_reading[0] = (humidity / 10) << 8 | humidity % 10;
+		reading->raw_reading[1] = (temperature / 10) << 8 | temperature % 10;
 
 		return DHT_READY;
     }

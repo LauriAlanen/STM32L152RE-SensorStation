@@ -20,8 +20,6 @@ void NSL19M51_init()
 
 void NSL19M51_read(MODBUS_Reading *reading)
 {
-	int adc_result = 0;
-
 	ADC1->SQR5 |= 1;
 	ADC1->CR2 |= ADC_CR2_ADON;
 	ADC1->CR2 |= ADC_CR2_SWSTART;

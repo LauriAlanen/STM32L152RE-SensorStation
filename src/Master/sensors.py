@@ -3,7 +3,8 @@ from time import sleep
 import serial
 import math
 
-ADC_STEP_SIZE_U = 3.3 / 4095 
+ADC_STEP_SIZE_U = 3.3 / 4095
+
 
 class Sensor:
     """
@@ -25,13 +26,12 @@ class Sensor:
         if not serial_port.is_open:
             serial_port.open()
 
-        # Send the request frame to the sensor
         serial_port.write(request_frame)
+        print(f"Sent request frame {request_frame}")
 
-        # Read the raw data from the sensor (adjust length as needed)
         raw_value = bytearray(serial_port.read(7))
+        print(f"Read frame {raw_value}")
 
-        # Use the passed conversion method to process the raw data
         converted_value = convert_method(raw_value)
 
         return converted_value
@@ -104,15 +104,20 @@ class DHT22(Sensor):
         # Reconstruct the raw value
         raw_value = (msb << 8) | lsb
 
-        encoded_value = ((raw_value // 10) << 8) | (raw_value % 10)
+        integer_part = raw_value // 10
+        decimal_part = raw_value % 10
+
+        encoded_value = integer_part + decimal_part
+
         return encoded_value
+
 
 class NS1L9M51(Sensor):
     def __init__(self, name):
         self.name = name
         self.request_frame = bytearray(
             [0x05, 0x04, 0x00, 0x01, 0x00, 0x01, 0x8E, 0x61])
-        
+
     def read(self, serial_port: serial.Serial, option: int) -> int:
 
         return self.read_sensor(serial_port, self.voc_request_frame, self.convert)
@@ -121,7 +126,6 @@ class NS1L9M51(Sensor):
     def convert(modbus_frame: bytearray) -> dict:
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
-
 
         # Reconstruct the uint16_t value
         adc_result = (msb << 8) | lsb
@@ -134,24 +138,24 @@ class NS1L9M51(Sensor):
         lux_dec = int((lux - lux_int) * 100)
 
         return lux
-    
-    
+
+
 class LMT84LP(Sensor):
     def __init__(self, name):
         self.name = name
         self.request_frame = bytearray(
             [0x01, 0x04, 0x00, 0x01, 0x00, 0x01, 0x0A, 0x60])
-        
+
     def read(self, serial_port: serial.Serial, option: int) -> int:
         return self.read_sensor(serial_port, self.request_frame, self.convert)
 
     @staticmethod
-    def convert(modbus_frame: bytearray) -> dict:
+    def convert(modbus_frame: bytearray) -> float:
         # Constants from the C code
-        T_MAX = 150.0
-        T_MIN = -50.0
-        U_MIN = 1.299
-        U_MAX = 0.183
+        t_max = 150.0
+        t_min = -50.0
+        u_min = 1.299
+        u_max = 0.183
 
         # Extract ADC result from modbus_frame
         msb = modbus_frame[3]
@@ -164,6 +168,7 @@ class LMT84LP(Sensor):
         voltage = ADC_STEP_SIZE_U * adc_result
 
         # Calculate the temperature using the given formula
-        temperature = ((voltage - U_MIN) / (U_MAX - U_MIN)) * (T_MAX - T_MIN) + T_MIN
-        
+        temperature = ((voltage - u_min) / (u_max - u_min)) * \
+            (t_max - t_min) + t_min
+
         return temperature

@@ -40,7 +40,7 @@ typedef struct MODBUS_Reading {
 	uint16_t lux;
     uint16_t tvoc_ppb;
     uint16_t co2_eq_ppm;
-    uint8_t raw_reading[4];
+    uint16_t raw_reading[5];
 } MODBUS_Reading;
 
 void MODBUS_IRQHandler();

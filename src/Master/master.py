@@ -107,7 +107,7 @@ class Master:
 
 
 if __name__ == "__main__":
-    with Master("COM21", 9600) as master:
+    with Master("COM5", 9600) as master:
         while True:
             # sensor_value = master.read_slave(1, 0)
             # print(f"SGP30 Co2 : {sensor_value}")
@@ -120,10 +120,10 @@ if __name__ == "__main__":
 
             # sensor_value = master.read_slave(2, 1)
             # print(f"DHT22 Humidity : {sensor_value}\n")
-                    
-            sensor_value = master.read_slave(0, 0)
-            print(f"LMT84LP Temperature : {sensor_value}\n")
-            
+
+            # sensor_value = master.read_slave(0, 0)
+            # print(f"LMT84LP Temperature : {sensor_value}\n")
+
             if input("Close connection : ") == 'Y':
                 break
 
