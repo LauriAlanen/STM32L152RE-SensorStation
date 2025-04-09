@@ -19,34 +19,10 @@ int16_t sensirion_i2c_select_bus(uint8_t bus_idx)
 
 uint8_t sensirion_i2c_init(void)
 {
-    int16_t probe;
-    uint8_t init_status = 1;
-
     I2C1_Init();
 
-	USART2_write_buffer("SGP30: Probing...");
-    for (int i = 0; i < SGP30_CONN_RETRIES; ++i)
-    {
-        probe = sgp30_probe();
-
-        if (probe == STATUS_OK)
-        {
-        	init_status = 0;
-        	break;
-        }
-        USART2_write_buffer("...");
-        sensirion_sleep_usec(1000000);
-    }
-    USART2_write_buffer("\n");
-
-    if(init_status)
-    {
-    	USART2_write_buffer("SGP30: Init Error!\n");
-    	return 1;
-    }
-
     sgp30_iaq_init();
-	USART2_write_buffer("SGP30: Init Success!\n");
+	USART2_write_buffer("SGP30: Initialized!\n");
 
     return 0;
 }
