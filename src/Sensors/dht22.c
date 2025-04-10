@@ -1,6 +1,6 @@
 #include "dht22.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 static volatile uint8_t pulses[BIT_COUNT];
 static volatile uint8_t dht_status = 0;

@@ -13,7 +13,7 @@
 #include "usart.h"
 #include "gpio.h"
 
-#define DEBUG 2
+#define DEBUG 0
 
 volatile uint8_t frame_ready = 0;
 
