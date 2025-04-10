@@ -9,7 +9,7 @@ store = SensorDataStore()
 master = Master("COM5", 9600)
 master.connect()
 
-collector = SensorDataCollector(master, store)
+collector = SensorDataCollector(master, store, 10)
 
 # Start collection in a background thread
 thread = Thread(target=collector.start, daemon=True)

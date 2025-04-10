@@ -2,17 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensor Data Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 300px;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: #777;
+        }
+    </style>
 </head>
 <body>
+
     <h1>Sensor Data Dashboard</h1>
-    <canvas id="lmt84Chart" width="800" height="400"></canvas>
+    
+    <div class="container">
+        <!-- LMT84 Temperature Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">LMT84 Temperature</h2>
+            <canvas id="lmt84Chart"></canvas>
+        </div>
+
+        <!-- NS1L9M51 Lux Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">NS1L9M51 Lux</h2>
+            <canvas id="ns1l9m51Chart"></canvas>
+        </div>
+
+        <!-- SGP30 CO2 Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">SGP30 CO2</h2>
+            <canvas id="sgp30Co2Chart"></canvas>
+        </div>
+
+        <!-- SGP30 VOC Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">SGP30 VOC</h2>
+            <canvas id="sgp30VocChart"></canvas>
+        </div>
+
+        <!-- DHT22 Humidity Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">DHT22 Humidity</h2>
+            <canvas id="dht22HumidityChart"></canvas>
+        </div>
+
+        <!-- DHT22 Temperature Chart -->
+        <div class="chart-container">
+            <h2 class="chart-title">DHT22 Temperature</h2>
+            <canvas id="dht22TempChart"></canvas>
+        </div>
+    </div>
 
     <script>
-        // Create the Chart.js chart object
-        let ctx = document.getElementById('lmt84Chart').getContext('2d');
-        let lmt84Chart = new Chart(ctx, {
+        // Create the chart instances
+        const ctxLmt84 = document.getElementById('lmt84Chart').getContext('2d');
+        const lmt84Chart = new Chart(ctxLmt84, {
             type: 'line',
             data: {
                 labels: [],
@@ -27,38 +112,166 @@
             },
             options: {
                 scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Time (s)'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Temperature'
-                        }
-                    }
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'Temperature (°C)' } }
                 }
             }
         });
 
-        // Function to update chart data by fetching latest sensor info
-        async function updateChart() {
+        const ctxNs1l9m51 = document.getElementById('ns1l9m51Chart').getContext('2d');
+        const ns1l9m51Chart = new Chart(ctxNs1l9m51, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'NS1L9M51 Lux',
+                    data: [],
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'Lux' } }
+                }
+            }
+        });
+
+        const ctxSgp30Co2 = document.getElementById('sgp30Co2Chart').getContext('2d');
+        const sgp30Co2Chart = new Chart(ctxSgp30Co2, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'SGP30 CO2',
+                    data: [],
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'CO2 (ppm)' } }
+                }
+            }
+        });
+
+        const ctxSgp30Voc = document.getElementById('sgp30VocChart').getContext('2d');
+        const sgp30VocChart = new Chart(ctxSgp30Voc, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'SGP30 VOC',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'VOC (ppb)' } }
+                }
+            }
+        });
+
+        const ctxDht22Humidity = document.getElementById('dht22HumidityChart').getContext('2d');
+        const dht22HumidityChart = new Chart(ctxDht22Humidity, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'DHT22 Humidity',
+                    data: [],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'Humidity (%)' } }
+                }
+            }
+        });
+
+        const ctxDht22Temp = document.getElementById('dht22TempChart').getContext('2d');
+        const dht22TempChart = new Chart(ctxDht22Temp, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'DHT22 Temperature',
+                    data: [],
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time (HH:MM:SS)' } },
+                    y: { title: { display: true, text: 'Temperature (°C)' } }
+                }
+            }
+        });
+
+        // Function to update all charts
+        async function updateCharts() {
             try {
                 const response = await fetch('/data');
                 const data = await response.json();
-                // data.lmt84.times and data.lmt84.values should be our latest data points
+
+                // Update LMT84 chart
                 lmt84Chart.data.labels = data.lmt84.times;
                 lmt84Chart.data.datasets[0].data = data.lmt84.values;
+
+                // Update NS1L9M51 chart
+                ns1l9m51Chart.data.labels = data.ns1l9m51.times;
+                ns1l9m51Chart.data.datasets[0].data = data.ns1l9m51.values;
+
+                // Update SGP30 CO2 chart
+                sgp30Co2Chart.data.labels = data.sgp30_co2.times;
+                sgp30Co2Chart.data.datasets[0].data = data.sgp30_co2.values;
+
+                // Update SGP30 VOC chart
+                sgp30VocChart.data.labels = data.sgp30_voc.times;
+                sgp30VocChart.data.datasets[0].data = data.sgp30_voc.values;
+
+                // Update DHT22 Humidity chart
+                dht22HumidityChart.data.labels = data.dht22_humidity.times;
+                dht22HumidityChart.data.datasets[0].data = data.dht22_humidity.values;
+
+                // Update DHT22 Temperature chart
+                dht22TempChart.data.labels = data.dht22_temp.times;
+                dht22TempChart.data.datasets[0].data = data.dht22_temp.values;
+
+                // Update all charts
                 lmt84Chart.update();
+                ns1l9m51Chart.update();
+                sgp30Co2Chart.update();
+                sgp30VocChart.update();
+                dht22HumidityChart.update();
+                dht22TempChart.update();
             } catch (error) {
                 console.error("Error fetching sensor data:", error);
             }
         }
 
-        // Update the chart every second
-        setInterval(updateChart, 1000);
+        // Update all charts every second
+        setInterval(updateCharts, 1000);
     </script>
 </body>
 </html>

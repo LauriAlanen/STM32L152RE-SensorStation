@@ -7,7 +7,7 @@ class SensorDataStore:
         self.data = defaultdict(lambda: {"times": [], "values": []})
         self.lock = threading.Lock()
 
-    def add(self, sensor: str, time: float, value: float):
+    def add(self, sensor: str, time: str, value: float):
         with self.lock:
             self.data[sensor]["times"].append(time)
             self.data[sensor]["values"].append(value)
