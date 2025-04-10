@@ -115,11 +115,11 @@ if __name__ == "__main__":
             # sensor_value = master.read_slave(1, 1)
             # print(f"SGP30 VoC : {sensor_value}\n")
 
-            # sensor_value = master.read_slave(2, 0)
-            # print(f"DHT22 Temperature : {sensor_value}\n")
+            sensor_value = master.read_slave(2, 0)
+            print(f"DHT22 Temperature : {sensor_value}\n")
 
-            # sensor_value = master.read_slave(2, 1)
-            # print(f"DHT22 Humidity : {sensor_value}\n")
+            sensor_value = master.read_slave(2, 1)
+            print(f"DHT22 Humidity : {sensor_value}\n")
 
             # sensor_value = master.read_slave(0, 0)
             # print(f"LMT84LP Temperature : {sensor_value}\n")

@@ -15,4 +15,7 @@ void EXTI9_5_IRQHandler(void)
 	}
 }
 
-
+void USART1_IRQHandler(void)
+{
+	MODBUS_IRQHandler();
+}

@@ -60,16 +60,6 @@ void USART1_write_buffer(uint8_t* buffer)
 	USART1_write('\n');
 }
 
-void USART1_IRQHandler(void)
-{
-    //if (USART1->SR & USART_SR_RXNE)
-    //{
-    //    uint8_t data = USART1->DR;
-    //	USART2_write(data);
-    //}
-	MODBUS_IRQHandler();
-}
-
 void USART2_init()
 {
 	RCC->APB1ENR |= RCC_APB1ENR_USART2EN; 	//set bit 17 (USART2 EN)
@@ -112,8 +102,3 @@ void USART2_write_buffer(uint8_t* buffer)
 	USART2_write('\r');
 	USART2_write('\n');
 }
-
-//void USART2_IRQHandler(void)
-//{
-//	MODBUS_IRQHandler();
-//}

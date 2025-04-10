@@ -34,10 +34,10 @@ int main(void)
 	ADC_init();
 
 	// Sensor Initializations
+    sensirion_i2c_init();
 	LMT84LP_init();
 	//NSL19M51_init();
-	//DHT22_init();
-    sensirion_i2c_init();
+	DHT22_init();
 
 	MODBUS_RE_TE_LOW();
 

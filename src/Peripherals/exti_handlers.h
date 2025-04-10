@@ -9,5 +9,6 @@
 #define PERIPHERALS_EXTI_HANDLERS_H_
 
 #include "dht22.h"
+#include "usart.h"
 
 #endif /* PERIPHERALS_EXTI_HANDLERS_H_ */
