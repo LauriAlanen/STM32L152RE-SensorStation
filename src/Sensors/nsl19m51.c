@@ -20,12 +20,12 @@ void NSL19M51_init()
 
 void NSL19M51_read(MODBUS_Reading *reading)
 {
+	ADC1->SQR5 &= ~CHANNEL_MASK;
 	ADC1->SQR5 |= 1;
 	ADC1->CR2 |= ADC_CR2_ADON;
 	ADC1->CR2 |= ADC_CR2_SWSTART;
 
 	while(!(ADC1->SR & ADC_SR_EOC)){}
-
 	reading->raw_reading[0] = ADC1->DR;
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;

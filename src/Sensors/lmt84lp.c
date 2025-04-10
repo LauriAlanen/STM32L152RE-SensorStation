@@ -29,22 +29,15 @@ void LMT84LP_init()
 
 void LMT84LP_read(MODBUS_Reading *reading)
 {
-	ADC1->SQR5 |= 0; // Start at channel zero
+	ADC1->SQR5 &= ~CHANNEL_MASK;
+	ADC1->SQR5 |= 0;
 	ADC1->CR2 |= ADC_CR2_ADON;
 	ADC1->CR2 |= ADC_CR2_SWSTART;
 
 	while(!(ADC1->SR & ADC_SR_EOC)){}
-
 	reading->raw_reading[0] = ADC1->DR;
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;
-
-	uint8_t debug_buffer[20];
-	float voltage = ADC_STEP_SIZE_U * reading->raw_reading[0];
-	float lux = 1.9634f * exp(2.1281f * voltage);
-	snprintf(debug_buffer, 20,"Lux : %.2f && Voltage: %.2f" , lux, voltage);
-	USART2_write_buffer(debug_buffer);
-
 }
 
 void LMT84LP_ModbusHander(MODBUS_Reading *reading)
