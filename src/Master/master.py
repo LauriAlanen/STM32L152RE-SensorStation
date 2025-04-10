@@ -1,50 +1,10 @@
-"""
-Modbus Master Serial Communication Module
-
-This module provides a `Master` class for communicating with a Modbus slave
-device over a serial connection. It supports sending requests, receiving
-responses, and computing CRC checksums.
-
-Usage Example:
-    from master import Master
-
-    modbus_master = Master(port='COM5', baudrate=9600)
-    request_frame = bytearray([0x01, 0x04, 0x00, 0x01, 0x00, 0x01, 0x60, 0x0A])
-    response = modbus_master.request_slave(request_frame)
-    modbus_master.close()
-
-Functions:
-    - Master: Handles serial communication with the Modbus slave.
-    - compute_crc: Computes a CRC-16 (Modbus) checksum for error checking.
-
-Author: Lauri Alanen
-Date: 2025-03-27
-"""
-
+import time
 import serial
-
 import sensors
 
 
 class Master:
-    """
-    A class to communicate with a Modbus slave over a serial connection.
-
-    Attributes:
-        port_name (str): The name of the serial port (e.g., 'COM5').
-        baudrate (int): The baud rate for serial communication.
-        timeout (int): The timeout value for the serial connection.
-        serial_port (serial.Serial): The serial port instance.
-    """
-
     def __init__(self, port: str, baudrate: int) -> None:
-        """
-        Initializes the Master device with a serial connection.
-
-        Args:
-            port (str): The name of the serial port.
-            baudrate (int): The baud rate for communication.
-        """
         self.port_name = port
         self.baudrate = baudrate
         self.timeout = 0.1
@@ -57,78 +17,77 @@ class Master:
             stopbits=serial.STOPBITS_ONE,
         )
 
-        self.sensors_list = [
-            sensors.LMT84LP("0x01"),
-            sensors.NS1L9M51("0x04"),
-            sensors.SGP30("0x05"),
-            sensors.DHT22("0x06")
-        ]
+        self.sensors = {
+            "lmt84": sensors.LMT84LP("0x01"),
+            "ns1l9m51": sensors.NS1L9M51("0x04"),
+            "sgp30": sensors.SGP30("0x05"),
+            "dht22": sensors.DHT22("0x06"),
+        }
 
     def close(self) -> None:
-        """
-        Closes the serial port if it is open.
-        """
         if self.serial_port and self.serial_port.is_open:
             self.serial_port.close()
 
-    def read_slave(self, sensor_index: int, option: int) -> int:
-        return self.sensors_list[sensor_index].read(self.serial_port, option)
+    def read_lmt84_temp(self) -> float:
+        """Wrapper to read temperature from the LMT84 sensor."""
+        return self.sensors["lmt84"].read(self.serial_port, 0)
 
-    @staticmethod
-    def compute_crc(msg: bytearray) -> int:
-        """
-        Computes the CRC-16 (Modbus) checksum for a given message.
+    def read_ns1l9m51_lux(self) -> float:
+        """Wrapper to read lux from the NS1L9M51 sensor."""
+        return self.sensors["ns1l9m51"].read(self.serial_port, 0)
 
-        Args:
-            msg (bytearray): The message for which the CRC is to be calculated.
+    def read_sgp30_co2(self) -> int:
+        """Wrapper to read CO2 from the SGP30 sensor (option 0)."""
+        return self.sensors["sgp30"].read(self.serial_port, 0)
 
-        Returns:
-            int: The computed CRC value.
-        """
-        crc = 0xFFFF
-        for byte in msg:
-            crc ^= byte
-            for _ in range(8):
-                if crc & 1:
-                    crc >>= 1
-                    crc ^= 0xA001
-                else:
-                    crc >>= 1
-        return crc
+    def read_sgp30_voc(self) -> int:
+        """Wrapper to read VOC from the SGP30 sensor (option 1)."""
+        return self.sensors["sgp30"].read(self.serial_port, 1)
+
+    def read_dht22_humidity(self) -> float:
+        """Wrapper to read humidity from the DHT22 sensor (option 0)."""
+        return self.sensors["dht22"].read(self.serial_port, 0)
+
+    def read_dht22_temp(self) -> float:
+        """Wrapper to read temperature from the DHT22 sensor (option 1)."""
+        return self.sensors["dht22"].read(self.serial_port, 1)
 
     def __enter__(self):
-        """Context manager entry: Open the serial port."""
         if not self.serial_port.is_open:
             self.serial_port.open()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """Context manager exit: Close the serial port when done."""
         self.close()
 
 
-if __name__ == "__main__":
+def main() -> None:
     with Master("COM5", 9600) as master:
-        while True:
-            # sensor_value = master.read_slave(0, 0)
-            # print(f"LMT84LP Temperature : {sensor_value}\n")
+        try:
+            while True:
+                temp = master.read_lmt84_temp()
+                print(f"LMT84LP Temperature: {temp}")
 
-            sensor_value = master.read_slave(1, 0)
-            print(f"NS1L9M51 Lux : {sensor_value}\n")
+                lux = master.read_ns1l9m51_lux()
+                print(f"NS1L9M51 Lux: {lux}")
 
-            # sensor_value = master.read_slave(2, 0)
-            # print(f"SGP30 Co2 : {sensor_value}")
+                co2 = master.read_sgp30_co2()
+                print(f"SGP30 CO2: {co2}")
 
-            # sensor_value = master.read_slave(2, 1)
-            # print(f"SGP30 VoC : {sensor_value}\n")
+                voc = master.read_sgp30_voc()
+                print(f"SGP30 VOC: {voc}")
 
-            # sensor_value = master.read_slave(3, 0)
-            # print(f"DHT22 Temperature : {sensor_value}")
+                dht_temp = master.read_dht22_temp()
+                print(f"DHT22 Temperature: {dht_temp}")
 
-            # sensor_value = master.read_slave(3, 1)
-            # print(f"DHT22 Humidity : {sensor_value}\n")
+                dht_humidity = master.read_dht22_humidity()
+                print(f"DHT22 Humidity: {dht_humidity}\n")
 
-            if input("Close connection : ") == 'Y':
-                break
+                if input("Close connection (Y to exit): ").strip().upper() == 'Y':
+                    break
+        finally:
+            master.close()
 
-        master.close()
+
+if __name__ == "__main__":
+    main()
