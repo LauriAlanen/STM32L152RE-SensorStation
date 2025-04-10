@@ -29,11 +29,9 @@ class Sensor:
         if not serial_port.is_open:
             serial_port.open()
 
-        # Write request and read expected number of bytes (assumed 7 here)
         serial_port.write(request_frame)
         raw_value = bytearray(serial_port.read(7))
 
-        # Basic check for frame length (adjust if your protocol changes)
         if len(raw_value) < 5:
             raise ValueError("Received incomplete data frame from sensor.")
 

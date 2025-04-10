@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sensor Data Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Sensor Data Dashboard</h1>
+    <canvas id="lmt84Chart" width="800" height="400"></canvas>
+
+    <script>
+        // Create the Chart.js chart object
+        let ctx = document.getElementById('lmt84Chart').getContext('2d');
+        let lmt84Chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'LMT84 Temperature',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time (s)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Temperature'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Function to update chart data by fetching latest sensor info
+        async function updateChart() {
+            try {
+                const response = await fetch('/data');
+                const data = await response.json();
+                // data.lmt84.times and data.lmt84.values should be our latest data points
+                lmt84Chart.data.labels = data.lmt84.times;
+                lmt84Chart.data.datasets[0].data = data.lmt84.values;
+                lmt84Chart.update();
+            } catch (error) {
+                console.error("Error fetching sensor data:", error);
+            }
+        }
+
+        // Update the chart every second
+        setInterval(updateChart, 1000);
+    </script>
+</body>
+</html>
