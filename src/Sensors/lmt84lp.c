@@ -9,6 +9,7 @@
 #include "lmt84lp.h"
 #include "adc.h"
 #include <stdio.h>
+#include "usart.h"
 
 // Mittaa l�mp�tilaa v�lilt� -50-150C. -50C --> 1299mV ja 150C --> 183mV
 // PIN PA0
@@ -37,6 +38,13 @@ void LMT84LP_read(MODBUS_Reading *reading)
 	reading->raw_reading[0] = ADC1->DR;
 
 	ADC1->CR2 &= ~ADC_CR2_ADON;
+
+	uint8_t debug_buffer[20];
+	float voltage = ADC_STEP_SIZE_U * reading->raw_reading[0];
+	float lux = 1.9634f * exp(2.1281f * voltage);
+	snprintf(debug_buffer, 20,"Lux : %.2f && Voltage: %.2f" , lux, voltage);
+	USART2_write_buffer(debug_buffer);
+
 }
 
 void LMT84LP_ModbusHander(MODBUS_Reading *reading)

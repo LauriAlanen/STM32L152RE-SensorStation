@@ -166,6 +166,8 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 			break;
 
 		case NSL19M51_MODBUS_ADDRESS:
+			NSL19M51_ModbusHandler(&reading);
+			MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[0]);
 			break;
 
 		case SGP30_MODBUS_ADDRESS:
@@ -184,7 +186,7 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 			break;
 
 		case DHT22_MODBUS_ADDRESS:
-			DHT22_ModbusHandler(&reading); // Example request frame for temperature 0x06 0x04 0x00 0x01 0x00 0x01 0x61 0xBD humidity 0x06 0x04 0x00 0x02 0x00 0x01 0x91 0xBD
+			DHT22_ModbusHandler(&reading);
 
 			if (MODBUS_Frame[3] == 0x01)
 			{
@@ -217,7 +219,7 @@ void MODBUS_ProcessFrame(void)
 #if DEBUG > 1
             	USART2_write_buffer("Clearing Ring Buffer");
 #endif
-                	MODBUS_ClearRingBuffer();
+				MODBUS_ClearRingBuffer();
         }
         return;
     }

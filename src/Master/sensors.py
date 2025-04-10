@@ -110,14 +110,13 @@ class NS1L9M51(Sensor):
     def __init__(self, name):
         self.name = name
         self.request_frame = bytearray(
-            [0x05, 0x04, 0x00, 0x01, 0x00, 0x01, 0x8E, 0x61])
+            [0x04, 0x04, 0x00, 0x01, 0x00, 0x01, 0x5F, 0x60])
 
     def read(self, serial_port: serial.Serial, option: int) -> int:
-
-        return self.read_sensor(serial_port, self.voc_request_frame, self.convert)
+        return self.read_sensor(serial_port, self.request_frame, self.convert)
 
     @staticmethod
-    def convert(modbus_frame: bytearray) -> dict:
+    def convert(modbus_frame: bytearray) -> float:
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
 
@@ -127,9 +126,6 @@ class NS1L9M51(Sensor):
         # Apply the voltage and lux calculation
         voltage = ADC_STEP_SIZE_U * adc_result
         lux = 1.9634 * math.exp(2.1281 * voltage)
-
-        lux_int = int(lux)
-        lux_dec = int((lux - lux_int) * 100)
 
         return lux
 
