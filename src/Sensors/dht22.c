@@ -70,8 +70,6 @@ uint8_t DHT22_read(MODBUS_Reading *reading)
 		uint8_t temperature_int = byte_list[2];
 		uint8_t temperature_dec = byte_list[3];
 		uint8_t checksum = byte_list[4];
-		uint16_t humidity = (humidity_int << 8) | humidity_dec;
-		uint16_t temperature = (temperature_int << 8) | temperature_dec;
 
 		uint8_t expected_checksum = humidity_int + humidity_dec + temperature_int + temperature_dec;
 		if (expected_checksum != checksum)
@@ -80,8 +78,10 @@ uint8_t DHT22_read(MODBUS_Reading *reading)
 			USART2_write_buffer(buffer);
 		}
 
-		reading->raw_reading[0] = (humidity / 10) << 8 | humidity % 10;
-		reading->raw_reading[1] = (temperature / 10) << 8 | temperature % 10;
+		reading->raw_reading[0] = humidity_int;
+		reading->raw_reading[1] = humidity_dec;
+		reading->raw_reading[2] = temperature_int;
+		reading->raw_reading[3] = temperature_dec;
 
 		return DHT_READY;
     }
@@ -162,19 +162,7 @@ void DHT22_decode_pulses(volatile uint8_t *pulses, uint8_t *byte_list)
 
 void DHT22_ModbusHandler(MODBUS_Reading* reading)
 {
-	uint8_t buffer[100];
-
-	if(!(DHT22_read(reading)))
-	{
-#if DEBUG == 1
-	    snprintf(buffer, 100, "DHT22 Humidity %4x", reading->humidity);
-		USART2_write_buffer(buffer);
-		snprintf(buffer, 100, "DHT22 Temperature %4x", reading->temperature);
-		USART2_write_buffer(buffer);
-#endif
-	}
-
-	return;
+	DHT22_read(reading);
 }
 
 void DHT22_IRQHandler()

@@ -27,10 +27,8 @@ class Sensor:
             serial_port.open()
 
         serial_port.write(request_frame)
-        print(f"Sent request frame {request_frame}")
 
         raw_value = bytearray(serial_port.read(7))
-        print(f"Read frame {raw_value}")
 
         converted_value = convert_method(raw_value)
 
@@ -96,20 +94,16 @@ class DHT22(Sensor):
         return value
 
     @staticmethod
-    def convert(modbus_frame: bytearray) -> int:
-        """Converts raw data to uint16_t value."""
+    def convert(modbus_frame: bytearray) -> float:
+        """Converts raw data to uint16_t value"""
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
 
-        # Reconstruct the raw value
+        # Combine MSB and LSB into a single 16-bit value
         raw_value = (msb << 8) | lsb
 
-        integer_part = raw_value // 10
-        decimal_part = raw_value % 10
-
-        encoded_value = integer_part + decimal_part
-
-        return encoded_value
+        # Interpret it as a value with one decimal place
+        return raw_value / 10.0
 
 
 class NS1L9M51(Sensor):
@@ -151,7 +145,6 @@ class LMT84LP(Sensor):
 
     @staticmethod
     def convert(modbus_frame: bytearray) -> float:
-        # Constants from the C code
         t_max = 150.0
         t_min = -50.0
         u_min = 1.299
@@ -171,4 +164,4 @@ class LMT84LP(Sensor):
         temperature = ((voltage - u_min) / (u_max - u_min)) * \
             (t_max - t_min) + t_min
 
-        return temperature
+        return round(temperature, 1)

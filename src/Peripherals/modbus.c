@@ -188,12 +188,12 @@ MODBUS_Status MODBUS_ReadSensor(uint8_t *MODBUS_Frame, uint8_t *MODBUS_ResponseF
 
 			if (MODBUS_Frame[3] == 0x01)
 			{
-				MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[1]);
+				MODBUS_Build_ResponseFrameRaw(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[0], reading.raw_reading[1]);
 			}
 
 			else
 			{
-				MODBUS_Build_ResponseFrameReading(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[0]);
+				MODBUS_Build_ResponseFrameRaw(MODBUS_ResponseFrame, MODBUS_Frame[0], reading.raw_reading[2], reading.raw_reading[3]);
 			}
 
 			break;
