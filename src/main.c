@@ -15,6 +15,8 @@
 #include "timing.h"
 #include "timers.h"
 
+#include <stdio.h>
+
 #define BUFFER_SIZE 50
 
 int main(void)
@@ -26,26 +28,22 @@ int main(void)
 
 	// Peripheral Initializations
 	GPIO_init();
-	//USART1_init();
-	//USART2_init();
-	//TIM2_Init();
-	//ADC_init();
+	USART1_init();
+	USART2_init();
+	TIM2_Init();
+	ADC_init();
 
 	// Sensor Initializations
-    //sensirion_i2c_init();
-	//LMT84LP_init();
-	//NSL19M51_init();
-	//DHT22_init();
+    sensirion_i2c_init(); // SGP30
+	LMT84LP_init();
+	NSL19M51_init();
+	DHT22_init();
 
 	MODBUS_RE_TE_LOW();
 
     while (1)
     {
-    	delay_ms(500);
-    	MODBUS_RE_TE_HIGH();
-    	delay_ms(500);
-    	MODBUS_RE_TE_LOW();
-		//MODBUS_ProcessFrame();
+		MODBUS_ProcessFrame();
     }
 
     return 0;
