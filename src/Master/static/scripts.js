@@ -129,24 +129,27 @@ async function updateDashboard() {
     const dashboard = document.getElementById('sensorDashboard');
     const template = document.getElementById('sensorCardTemplate');
     const MAX_POINTS = 100;
+    const noChartMessage = document.getElementById('noChartMessage');
+
+    let hasCharts = false;  // Flag to track if there are any charts
 
     Object.keys(data).forEach((sensor, index) => {
       let card = dashboard.querySelector(`.sensor-card[data-sensor="${sensor}"]`);
       const canvasId = `${sensor.replace(/\s+/g, '')}Chart`; // Remove spaces for ID
-      
+
       // Create new card if it doesn't exist
       if (!card) {
         const clone = template.content.cloneNode(true);
         card = clone.querySelector('.sensor-card');
         card.dataset.sensor = sensor;
-        
+
         // Set up card elements
         card.querySelector('.sensor-title').textContent = sensor;
         const canvas = card.querySelector('canvas');
         canvas.id = canvasId; // Set the canvas ID
-        
+
         dashboard.appendChild(card);
-        
+
         const unit = getUnitForSensor(sensor);
         const color = getColor(index).border; // Extract just the border color
         charts[sensor] = createChart(canvasId, `${sensor} (${unit})`, color);
@@ -183,7 +186,16 @@ async function updateDashboard() {
           card.querySelector('.avg-value').textContent = `${stats.avg} ${unit}`;
         }
       }
+
+      hasCharts = true;  // If we've created or updated at least one chart
     });
+
+    // Show or hide the "No charts to display" message based on whether we have charts
+    if (hasCharts) {
+      noChartMessage.style.display = 'none';  // Hide the message
+    } else {
+      noChartMessage.style.display = 'block'; // Show the message
+    }
 
   } catch (err) {
     console.error("Dashboard update failed:", err);

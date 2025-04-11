@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sensor Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='add_sensor.css') }}">
+</head>
+<body>
+  <div class="header-container">
+    <h1>Sensor Configuration</h1>
+    <button class="go-back-btn" onclick="window.history.back()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+      </svg>
+      Go Back
+    </button>
+  </div>
+  <div class="container">
+    <form id="addSensorForm" onsubmit="addSensor(event);">
+      <h2>Add a New Sensor</h2>
+      <label for="sensor_type">Sensor Type:</label>
+      <select id="sensor_type" name="sensor_type" required>
+        <option value="LMT84LP">LMT84LP</option>
+        <option value="NS1L9M51">NS1L9M51</option>
+        <option value="SGP30">SGP30</option>
+        <option value="DHT22">DHT22</option>
+      </select>
+
+      <label for="sensor_name">Sensor Name:</label>
+      <input type="text" id="sensor_name" name="sensor_name" placeholder="Unique sensor name" required>
+
+      <label for="address">Address (e.g., 0x01):</label>
+      <input type="text" id="address" name="address" placeholder="0x01 or 1" required>
+
+      <button type="submit">Add Sensor</button>
+      <div id="result"></div>
+    </form>
+
+    <div class="sensor-list">
+      <h2>Active Sensors</h2>
+      <table id="sensorTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='add_sensor.js') }}"></script>
+</body>
+</html>

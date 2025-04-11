@@ -35,7 +35,7 @@ def stop():
 
 @app.route('/sensor_management')
 def sensor_management():
-    return render_template("add_sensor_page.html")
+    return render_template("add_sensor.html")
 
 
 @app.route('/add_sensor', methods=['POST'])
@@ -90,6 +90,27 @@ def add_sensor():
         return jsonify({"error": str(ve)}), 400
 
     return jsonify({"status": f"Sensor '{sensor_name}' of type '{sensor_type}' added successfully with address {address_int}."}), 200
+
+
+@app.route('/active_sensors', methods=['GET'])
+def active_sensors():
+    """
+    Returns a list of all currently active sensors.
+    Each sensor is represented as:
+    {
+        "name": "sensor_name",
+        "type": "SensorClassName",
+        "address": 1
+    }
+    """
+    sensors_list = []
+    for name, sensor in master.sensors.items():
+        sensors_list.append({
+            "name": name,
+            "type": sensor.__class__.__name__,
+            "address": getattr(sensor, 'address', None)
+        })
+    return jsonify(sensors_list), 200
 
 
 if __name__ == '__main__':

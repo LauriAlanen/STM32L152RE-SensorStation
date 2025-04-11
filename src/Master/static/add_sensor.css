@@ -1,0 +1,102 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f0f2f5;
+  padding: 2rem;
+  color: #333;
+}
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+h1 {
+  margin-bottom: 1rem;
+}
+.container {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+form {
+  flex: 1;
+  min-width: 300px;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+form label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+form input, form select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+form button {
+  margin-top: 1.5rem;
+  padding: 0.6rem 1.2rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+form button:hover {
+  background-color: #0056b3;
+}
+#result {
+  margin-top: 1rem;
+  font-weight: bold;
+  white-space: pre-wrap;
+}
+.sensor-list {
+  flex: 2;
+  min-width: 300px;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+th, td {
+  padding: 0.6rem;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+th {
+  background-color: #f8f8f8;
+}
+.go-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1rem 0.6rem 0.8rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.go-back-btn:hover {
+  background-color: #5a6268;
+  transform: translateX(-2px);
+}
+.go-back-btn svg {
+  transition: transform 0.2s ease;
+}
+.go-back-btn:hover svg {
+  transform: translateX(-3px);
+}
