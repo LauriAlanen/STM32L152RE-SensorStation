@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add a New Sensor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+    }
+    form {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      max-width: 400px;
+      background: #f9f9f9;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.3rem;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+    #result {
+      margin-top: 1.5rem;
+      font-weight: bold;
+    }
+  </style>
+  <script>
+    async function addSensor(event) {
+      event.preventDefault();
+
+      const sensorType = document.getElementById("sensor_type").value;
+      const sensorName = document.getElementById("sensor_name").value;
+      const address = document.getElementById("address").value;
+
+      const payload = {
+        sensor_type: sensorType,
+        sensor_name: sensorName,
+        address: address
+      };
+
+      try {
+        const response = await fetch('/add_sensor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        document.getElementById("result").innerText = JSON.stringify(result, null, 2);
+      } catch (err) {
+        document.getElementById("result").innerText = "Error: " + err;
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>Add a New Sensor</h1>
+  <form id="addSensorForm" onsubmit="addSensor(event);">
+    <label for="sensor_type">Sensor Type:</label>
+    <select id="sensor_type" name="sensor_type" required>
+      <option value="LMT84LP">LMT84LP</option>
+      <option value="NS1L9M51">NS1L9M51</option>
+      <option value="SGP30">SGP30</option>
+      <option value="DHT22">DHT22</option>
+    </select>
+
+    <label for="sensor_name">Sensor Name:</label>
+    <input type="text" id="sensor_name" name="sensor_name" placeholder="Unique sensor name" required>
+
+    <label for="address">Address (e.g., 0x01):</label>
+    <input type="text" id="address" name="address" placeholder="0x01 or 1" required>    
+    
+    <button type="submit">Add Sensor</button>
+  </form>
+
+  <div id="result"></div>
+</body>
+</html>

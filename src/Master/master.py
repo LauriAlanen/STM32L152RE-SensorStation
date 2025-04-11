@@ -1,4 +1,5 @@
 import serial
+from typing import Dict, Any
 import sensors
 
 
@@ -8,15 +9,10 @@ class Master:
         self.port_name = port
         self.baudrate = baudrate
         self.timeout = 0.1
-        self.serial_port = None  # Initialize as None
+        self.serial_port = None
 
-        # Create sensor instances using integer addresses
-        self.sensors = {
-            "lmt84": sensors.LMT84LP(0x01, "LMT84"),
-            "ns1l9m51": sensors.NS1L9M51(0x04, "NS1L9M51"),
-            "sgp30": sensors.SGP30(0x05, "SGP30"),
-            "dht22": sensors.DHT22(0x06, "DHT22"),
-        }
+        # Sensors stored by name
+        self.sensors: Dict[str, Any] = {}
 
     def connect(self) -> None:
         if self.serial_port is None:
@@ -38,54 +34,33 @@ class Master:
             print("Closing serial connection...")
             self.serial_port.close()
 
-    # --- Sensor read wrappers below ---
+    def add_sensor(self, name: str, sensor_instance: Any) -> None:
+        """
+        Add a sensor dynamically.
 
-    def read_lmt84_temp(self) -> float:
-        try:
-            # Option 0 for LMT84 (only one reading available)
-            return self.sensors["lmt84"].read(self.serial_port, 0)
-        except Exception as e:
-            print(f"Error reading LMT84 temperature: {e}")
-            return 0.0
+        :param name: Unique name for the sensor (used in reads).
+        :param sensor_instance: Instantiated sensor object (e.g., sensors.LMT84LP(...))
+        """
+        if name in self.sensors:
+            raise ValueError(f"Sensor '{name}' already exists.")
+        print(f"Adding sensor '{name}'...")
+        self.sensors[name] = sensor_instance
 
-    def read_ns1l9m51_lux(self) -> float:
-        try:
-            return self.sensors["ns1l9m51"].read(self.serial_port, 0)
-        except Exception as e:
-            print(f"Error reading NS1L9M51 lux: {e}")
-            return 0.0
+    def read_sensor(self, name: str, option: int) -> Any:
+        """
+        Generic sensor read.
 
-    def read_sgp30_co2(self) -> int:
+        :param name: Name of the sensor as added via `add_sensor`.
+        :param option: Option index to read (e.g., 0 for temp, 1 for humidity).
+        :return: Sensor reading or fallback value on error.
+        """
+        if name not in self.sensors:
+            raise ValueError(f"Sensor '{name}' not found.")
         try:
-            # Option 0 assumed to return CO2 in SGP30
-            return self.sensors["sgp30"].read(self.serial_port, 0)
+            return self.sensors[name].read(self.serial_port, option)
         except Exception as e:
-            print(f"Error reading SGP30 CO2: {e}")
-            return 0
-
-    def read_sgp30_voc(self) -> int:
-        try:
-            # Option 1 assumed to return VOC in SGP30
-            return self.sensors["sgp30"].read(self.serial_port, 1)
-        except Exception as e:
-            print(f"Error reading SGP30 VOC: {e}")
-            return 0
-
-    def read_dht22_temp(self) -> float:
-        try:
-            # For DHT22, using option 0 now to read temperature based on dynamic register allocation
-            return self.sensors["dht22"].read(self.serial_port, 0)
-        except Exception as e:
-            print(f"Error reading DHT22 temperature: {e}")
-            return 0.0
-
-    def read_dht22_humidity(self) -> float:
-        try:
-            # Using option 1 to read humidity from DHT22
-            return self.sensors["dht22"].read(self.serial_port, 1)
-        except Exception as e:
-            print(f"Error reading DHT22 humidity: {e}")
-            return 0.0
+            print(f"Error reading {name} (option {option}): {e}")
+            return 0 if isinstance(option, int) else None
 
     def __enter__(self):
         self.connect()

@@ -14,7 +14,7 @@ def modbus_crc(data: bytearray) -> bytearray:
         data (bytearray): Frame bytes to calculate the CRC for.
 
     Returns:
-        bytearray: A two-byte CRC (low byte first, then high byte).
+        bytearray: A two-byte CRC (high byte first then low byte).
     """
     crc = 0xFFFF
     for pos in data:
@@ -25,7 +25,6 @@ def modbus_crc(data: bytearray) -> bytearray:
                 crc ^= 0xA001
             else:
                 crc >>= 1
-    # Return as two bytes: high byte first then low byte
     return bytearray([(crc >> 8) & 0xFF, crc & 0xFF])
 
 
@@ -41,8 +40,6 @@ def build_modbus_request(address: int, register: int, count: int) -> bytearray:
     Returns:
         bytearray: The complete request frame including the CRC.
     """
-    # Construct the frame: [address, function code (0x04 for input registers),
-    # high and low byte of starting register, high and low byte of register count]
     frame = bytearray([address, 0x04,
                        (register >> 8) & 0xFF, register & 0xFF,
                        (count >> 8) & 0xFF, count & 0xFF])
@@ -74,18 +71,15 @@ class Sensor:
             serial_port.open()
 
         serial_port.write(request_frame)
-        # Print the frame with 2bytes at a time for debugging
+        # Print the frame with 2 bytes at a time for debugging
         print("Request Frame: ", end='')
         for i in range(0, len(request_frame), 2):
-            print(
-                f"{request_frame[i]:02X} {request_frame[i + 1]:02X}", end=' ')
+            print(f"{request_frame[i]:02X} {request_frame[i+1]:02X}", end=' ')
         print()
 
         raw_value = bytearray(serial_port.read(7))
-
         if len(raw_value) < 5:
             raise ValueError("Received incomplete data frame from sensor.")
-
         return convert_method(raw_value)
 
 
@@ -95,6 +89,7 @@ class SGP30(Sensor):
     def __init__(self, address: int, name: str):
         self.name = name
         self.address = address  # Modbus address for the sensor
+        self.channels = 2  # Option 0: CO2, Option 1: VOC
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -102,7 +97,7 @@ class SGP30(Sensor):
 
         Args:
             serial_port (serial.Serial): Serial connection.
-            option (int): 0 for CO2 (ppm), any other integer for VOC (ppb).
+            option (int): 0 for CO2 (ppm), 1 for VOC (ppb).
 
         Returns:
             float: Sensor reading.
@@ -142,6 +137,7 @@ class DHT22(Sensor):
         self.name = name
         self.address = address  # Modbus address for the sensor
         self.last_read_time: float = 0.0
+        self.channels = 2  # Option 0: Temperature, Option 1: Humidity
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -149,7 +145,7 @@ class DHT22(Sensor):
 
         Args:
             serial_port (serial.Serial): Serial connection.
-            option (int): 0 for temperature, any other integer for humidity.
+            option (int): 0 for temperature, 1 for humidity.
 
         Returns:
             float: Converted sensor reading.
@@ -192,6 +188,7 @@ class NS1L9M51(Sensor):
     def __init__(self, address: int, name: str):
         self.name = name
         self.address = address  # Modbus address for the sensor
+        self.channels = 1  # Only one reading (lux)
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
@@ -235,6 +232,7 @@ class LMT84LP(Sensor):
     def __init__(self, address: int, name: str):
         self.name = name
         self.address = address  # Modbus address for the sensor
+        self.channels = 1  # Only one reading (temperature)
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
