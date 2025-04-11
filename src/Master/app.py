@@ -9,6 +9,10 @@ app = Flask(__name__)
 store = SensorDataStore()
 master = Master("COM5", 9600)
 master.connect()
+master.add_sensor("Makuuhuoneen Valo", sensors.LMT84LP(0x01, "Testi"))
+master.add_sensor("Makuuhuoneen Ilmanlaatu", sensors.SGP30(0x05, "SGP30"))
+master.add_sensor("Makuuhuone",
+                  sensors.DHT22(0x06, "DHT22"))
 
 collector = SensorDataCollector(master, store, 10)
 
@@ -111,6 +115,46 @@ def active_sensors():
             "address": getattr(sensor, 'address', None)
         })
     return jsonify(sensors_list), 200
+
+
+@app.route('/sensor_metadata', methods=['GET'])
+def sensor_metadata():
+    """
+    Returns metadata about all sensors including units and channel information.
+
+    Response format:
+    {
+        "sensor_name": {
+            "type": "SensorClassName",
+            "address": 1,
+            "channels": {
+                0: {
+                    "name": "Temperature",
+                    "unit": "°C"
+                },
+                1: {
+                    "name": "Humidity",
+                    "unit": "%"
+                }
+            }
+        }
+    }
+    """
+    metadata = {}
+    for name, sensor in master.sensors.items():
+        channels = {}
+        for channel in range(sensor.channels):
+            channels[channel] = {
+                "name": sensor.channel_names.get(channel, f"Channel {channel}"),
+                "unit": sensor.units.get(channel, "unknown")
+            }
+
+        metadata[name] = {
+            "type": sensor.__class__.__name__,
+            "address": getattr(sensor, 'address', None),
+            "channels": channels
+        }
+    return jsonify(metadata), 200
 
 
 if __name__ == '__main__':

@@ -51,6 +51,13 @@ class Sensor:
     """
     Base sensor class with a generic method for reading sensor data.
     """
+
+    def __init__(self, address: int, name: str):
+        self.name = name
+        self.address = address
+        self.units = {}  # Dictionary to store units for each channel
+        self.channel_names = {}  # Dictionary to store names for each channel
+
     @staticmethod
     def read_sensor(serial_port: serial.Serial, request_frame: bytearray, convert_method) -> float:
         """
@@ -87,9 +94,10 @@ class SGP30(Sensor):
     """Air quality sensor (SGP30) handling CO2 and VOC readings."""
 
     def __init__(self, address: int, name: str):
-        self.name = name
-        self.address = address  # Modbus address for the sensor
+        super().__init__(address, name)
         self.channels = 2  # Option 0: CO2, Option 1: VOC
+        self.units = {0: "ppm", 1: "ppb"}  # CO2 in ppm, VOC in ppb
+        self.channel_names = {0: "CO2 Concentration", 1: "VOC Concentration"}
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -134,10 +142,11 @@ class DHT22(Sensor):
     """
 
     def __init__(self, address: int, name: str):
-        self.name = name
-        self.address = address  # Modbus address for the sensor
+        super().__init__(address, name)
         self.last_read_time: float = 0.0
         self.channels = 2  # Option 0: Temperature, Option 1: Humidity
+        self.units = {0: "°C", 1: "%"}  # Temperature in °C, Humidity in %
+        self.channel_names = {0: "Temperature", 1: "Relative Humidity"}
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -186,9 +195,10 @@ class NS1L9M51(Sensor):
     """Light sensor NS1L9M51 converting ADC readings to lux."""
 
     def __init__(self, address: int, name: str):
-        self.name = name
-        self.address = address  # Modbus address for the sensor
+        super().__init__(address, name)
         self.channels = 1  # Only one reading (lux)
+        self.units = {0: "lux"}  # Light intensity in lux
+        self.channel_names = {0: "Light Intensity"}
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
@@ -230,9 +240,10 @@ class LMT84LP(Sensor):
     """
 
     def __init__(self, address: int, name: str):
-        self.name = name
-        self.address = address  # Modbus address for the sensor
+        super().__init__(address, name)
         self.channels = 1  # Only one reading (temperature)
+        self.units = {0: "°C"}  # Temperature in °C
+        self.channel_names = {0: "Temperature"}
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
