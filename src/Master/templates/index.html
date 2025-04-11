@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sensor Data Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Optional inline styling for the add sensor button */
     .add-sensor-button {
       display: inline-block;
       padding: 0.5rem 1rem;
@@ -17,7 +16,6 @@
       text-decoration: none;
       border-radius: 4px;
     }
-
     .add-sensor-button:hover {
       background-color: #0056b3;
     }
@@ -25,166 +23,38 @@
 </head>
 <body>
   <h1>Sensor Data Dashboard</h1>
-  <!-- Button to navigate to add sensor page -->
   <a href="/sensor_management" class="add-sensor-button">Add New Sensor</a>
-  
-  <div class="dashboard">
-    <!-- DHT22 Humidity -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">DHT22 Humidity</div>
-        <div class="current-value" id="dht22_humidityCurrent">-- %</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="dht22HumidityChart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="dht22_humidityMin">-- %</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="dht22_humidityMax">-- %</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="dht22_humidityAvg">-- %</div>
-        </div>
-      </div>
-      <div class="last-update" id="dht22_humidityTime">Last update: --:--:--</div>
-    </div>
 
-    <!-- DHT22 Temperature -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">DHT22 Temperature</div>
-        <div class="current-value" id="dht22_tempCurrent">-- °C</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="dht22TempChart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="dht22_tempMin">-- °C</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="dht22_tempMax">-- °C</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="dht22_tempAvg">-- °C</div>
-        </div>
-      </div>
-      <div class="last-update" id="dht22_tempTime">Last update: --:--:--</div>
-    </div>
-
-    <!-- LMT84 Temperature -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">LMT84 Temperature</div>
-        <div class="current-value" id="lmt84Current">-- °C</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="lmt84Chart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="lmt84Min">-- °C</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="lmt84Max">-- °C</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="lmt84Avg">-- °C</div>
-        </div>
-      </div>
-      <div class="last-update" id="lmt84Time">Last update: --:--:--</div>
-    </div>
-
-    <!-- NS1L9M51 Lux -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">NS1L9M51 Light</div>
-        <div class="current-value" id="ns1l9m51Current">-- Lux</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="ns1l9m51Chart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="ns1l9m51Min">-- Lux</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="ns1l9m51Max">-- Lux</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="ns1l9m51Avg">-- Lux</div>
-        </div>
-      </div>
-      <div class="last-update" id="ns1l9m51Time">Last update: --:--:--</div>
-    </div>
-
-    <!-- SGP30 CO2 -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">SGP30 CO2</div>
-        <div class="current-value" id="sgp30_co2Current">-- ppm</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="sgp30Co2Chart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="sgp30_co2Min">-- ppm</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="sgp30_co2Max">-- ppm</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="sgp30_co2Avg">-- ppm</div>
-        </div>
-      </div>
-      <div class="last-update" id="sgp30_co2Time">Last update: --:--:--</div>
-    </div>
-
-    <!-- SGP30 VOC -->
-    <div class="sensor-card">
-      <div class="sensor-header">
-        <div class="sensor-title">SGP30 VOC</div>
-        <div class="current-value" id="sgp30_vocCurrent">-- ppb</div>
-      </div>
-      <div class="chart-container">
-        <canvas id="sgp30VocChart"></canvas>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-label">Minimum</div>
-          <div class="stat-value" id="sgp30_vocMin">-- ppb</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Maximum</div>
-          <div class="stat-value" id="sgp30_vocMax">-- ppb</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Average</div>
-          <div class="stat-value" id="sgp30_vocAvg">-- ppb</div>
-        </div>
-      </div>
-      <div class="last-update" id="sgp30_vocTime">Last update: --:--:--</div>
-    </div>
+  <div class="dashboard" id="sensorDashboard">
+    <!-- Dynamic sensor cards will be inserted here -->
   </div>
+
+  <template id="sensorCardTemplate">
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title"></div>
+        <div class="current-value"></div>
+      </div>
+      <div class="chart-container">
+        <canvas></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value min-value">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value max-value">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value avg-value">--</div>
+        </div>
+      </div>
+      <div class="last-update time-label">Last update: --:--:--</div>
+    </div>
+  </template>
 
   <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
