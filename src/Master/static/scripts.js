@@ -17,6 +17,7 @@ async function fetchSensorMetadata() {
   try {
     const response = await fetch('/sensor_metadata');
     sensorMetadata = await response.json();
+    console.log("Sensor metadata loaded:", sensorMetadata);
   } catch (err) {
     console.error("Failed to fetch sensor metadata:", err);
     // Fallback to empty object if metadata fetch fails
@@ -24,68 +25,93 @@ async function fetchSensorMetadata() {
   }
 }
 
-// Initial fetch of sensor metadata and then start the dashboard updates
+// Get both name and unit for a sensor with prefix
+function getSensorDetails(sensorName) {
+  // Extract channel number if present (e.g., "Makuuhuone_1" → channel "1")
+  const channelMatch = sensorName.match(/(\d+)$/);
+  const channel = channelMatch ? channelMatch[1] : null;
+  
+  // Remove any suffix after underscore for matching the base sensor name
+  const baseSensorName = sensorName.replace(/_.*$/, "");
+
+  // Check if sensor exists in metadata
+  if (!sensorMetadata[baseSensorName] || !sensorMetadata[baseSensorName].channels) {
+    console.warn(`Sensor "${baseSensorName}" not found in metadata`);
+    
+    // Fallback to common patterns if metadata not found
+    const lowerName = sensorName.toLowerCase();
+    if (lowerName.includes('humidity')) return { 
+      name: `${baseSensorName} Humidity`, 
+      unit: "%",
+      fullName: `${baseSensorName} Humidity`
+    };
+    if (lowerName.includes('temp') || lowerName.includes('temperature')) return { 
+      name: `${baseSensorName} Temperature`, 
+      unit: "°C",
+      fullName: `${baseSensorName} Temperature`
+    };
+    if (lowerName.includes('light') || lowerName.includes('lux')) return { 
+      name: `${baseSensorName} Light`, 
+      unit: "Lux",
+      fullName: `${baseSensorName} Light`
+    };
+    if (lowerName.includes('co2')) return { 
+      name: `${baseSensorName} CO₂`, 
+      unit: "ppm",
+      fullName: `${baseSensorName} CO₂`
+    };
+    if (lowerName.includes('voc')) return { 
+      name: `${baseSensorName} VOC`, 
+      unit: "ppb",
+      fullName: `${baseSensorName} VOC`
+    };
+    
+    return { 
+      name: sensorName, 
+      unit: "",
+      fullName: sensorName
+    };
+  }
+
+  const channels = sensorMetadata[baseSensorName].channels;
+
+  // If a specific channel was requested
+  if (channel && channels[channel]) {
+    return {
+      name: `${baseSensorName} ${channels[channel].name}`,
+      unit: channels[channel].unit,
+      fullName: `${baseSensorName} ${channels[channel].name}`
+    };
+  }
+
+  // If no specific channel was requested, return first channel's data
+  const firstChannel = Object.values(channels)[0];
+  return {
+    name: `${baseSensorName} ${firstChannel.name}`,
+    unit: firstChannel.unit,
+    fullName: `${baseSensorName} ${firstChannel.name}`
+  };
+}
+
 async function initializeDashboard() {
   try {
-    await fetchSensorMetadata();
+    // FIRST ensure metadata is loaded
+    await fetchSensorMetadata(); 
+    
     console.log("Sensor metadata loaded successfully");
-    console.log(sensorMetadata); // Log the metadata for debugging
     
-    // Initial and periodic update
-    updateDashboard(); // Do first update immediately
-    setInterval(updateDashboard, 2000); // Then every 2 seconds
+    // THEN start updates
+    updateDashboard(); // First update with guaranteed metadata
+    setInterval(updateDashboard, 2000);
     
-    // Hide loading message if exists
-    const loadingMessage = document.getElementById('loadingMessage');
-    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (document.getElementById('loadingMessage')) {
+      document.getElementById('loadingMessage').style.display = 'none';
+    }
     
   } catch (err) {
-    console.error("Failed to initialize dashboard:", err);
-    // Show error message to user
-    const errorElement = document.getElementById('errorMessage') || document.createElement('div');
-    errorElement.id = 'errorMessage';
-    errorElement.textContent = "Failed to load sensor information. Some units may not display correctly.";
-    errorElement.style.color = 'red';
-    document.body.prepend(errorElement);
-    
-    // Continue with dashboard updates even if metadata failed
-    updateDashboard();
-    setInterval(updateDashboard, 2000);
+    console.error("Initialization failed:", err);
+    // Error handling remains the same
   }
-}
-// Start the initialization
-initializeDashboard();
-
-function getUnitsForSensor(sensor) {
-  const units = [];
-  
-  const channelMatch = sensor.match(/(\d+)$/);
-  const channel = channelMatch ? channelMatch[1] : null;
-  sensor = sensor.replace(/_.*$/, ""); // Remove any suffix after underscore for matching
-  
-  if (sensorMetadata[sensor] && sensorMetadata[sensor].channels) {
-      if (channel && sensorMetadata[sensor].channels[channel]) {
-          const unit = sensorMetadata[sensor].channels[channel].unit;
-          units.push(unit);
-      } else {
-          // If no channel or channel not found, push all units from all channels
-          Object.values(sensorMetadata[sensor].channels).forEach(channelData => {
-              const unit = channelData.unit;
-              units.push(unit);
-          });
-      }
-  }
-  
-  // If no units found in metadata, try to match by common patterns
-  if (units.length === 0) {
-    if (sensor.toLowerCase().includes('humidity')) units.push('%');
-    if (sensor.toLowerCase().includes('temp') || sensor.toLowerCase().includes('temperature')) units.push('°C');
-    if (sensor.toLowerCase().includes('light') || sensor.toLowerCase().includes('lux')) units.push('Lux');
-    if (sensor.toLowerCase().includes('co2')) units.push('ppm');
-    if (sensor.toLowerCase().includes('voc')) units.push('ppb');
-  }
-  
-  return units.length > 0 ? units : [''];
 }
 
 function getColor(index) {
@@ -96,23 +122,23 @@ function getColor(index) {
   };
 }
 
-function createChart(canvas, label, colorConfig, units = []) {
-  const datasets = units.map((unit, i) => ({
-    label: `${label} ${units.length > 1 ? `(Channel ${i+1} ${unit})` : `(${unit})`}`,
-    data: [],
-    borderColor: colorConfig.border.replace(')', `${0.5 + (i * 0.3)})`), // Adjust opacity for multiple lines
-    backgroundColor: colorConfig.background.replace(')', `${0.2 + (i * 0.2)})`),
-    borderWidth: 1.5,
-    pointRadius: 1,
-    fill: false,
-    tension: 0.1
-  }));
-
+function createChart(canvas, sensorName, colorConfig) {
+  const details = getSensorDetails(sensorName);
+  
   return new Chart(canvas, {
     type: 'line',
     data: {
       labels: [],
-      datasets: datasets
+      datasets: [{
+        label: `${details.fullName} (${details.unit})`,
+        data: [],
+        borderColor: colorConfig.border,
+        backgroundColor: colorConfig.background,
+        borderWidth: 1.5,
+        pointRadius: 1,
+        fill: false,
+        tension: 0.1
+      }]
     },
     options: {
       responsive: true,
@@ -144,7 +170,7 @@ function createChart(canvas, label, colorConfig, units = []) {
         y: {
           title: {
             display: true,
-            text: label,
+            text: details.fullName,
             color: '#a0a0a0'
           },
           grid: {
@@ -154,12 +180,12 @@ function createChart(canvas, label, colorConfig, units = []) {
             color: '#a0a0a0',
             padding: 5
           },
-          beginAtZero: !label.toLowerCase().includes('light')
+          beginAtZero: !sensorName.toLowerCase().includes('light')
         }
       },
       plugins: {
         legend: { 
-          display: units.length > 1, // Only show legend if multiple channels
+          display: true,
           position: 'top',
           labels: {
             color: '#a0a0a0'
@@ -182,32 +208,15 @@ function createChart(canvas, label, colorConfig, units = []) {
 function calculateStats(values) {
   if (!values || values.length === 0) return null;
   
-  // Handle single value array or array of arrays (multiple channels)
-  const isMultiChannel = Array.isArray(values[0]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
   
-  if (isMultiChannel) {
-    return values.map(channelValues => {
-      if (channelValues.length === 0) return null;
-      const min = Math.min(...channelValues);
-      const max = Math.max(...channelValues);
-      const avg = channelValues.reduce((sum, val) => sum + val, 0) / channelValues.length;
-      return {
-        min: min.toFixed(2),
-        max: max.toFixed(2),
-        avg: avg.toFixed(2)
-      };
-    });
-  } else {
-    if (values.length === 0) return null;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-    return [{
-      min: min.toFixed(2),
-      max: max.toFixed(2),
-      avg: avg.toFixed(2)
-    }];
-  }
+  return {
+    min: min.toFixed(2),
+    max: max.toFixed(2),
+    avg: avg.toFixed(2)
+  };
 }
 
 async function updateDashboard() {
@@ -217,15 +226,11 @@ async function updateDashboard() {
     const dashboard = document.getElementById('sensorDashboard');
     const template = document.getElementById('sensorCardTemplate');
     const MAX_POINTS = 100;
-    const noChartMessage = document.getElementById('noChartMessage');
 
     Object.keys(data).forEach((sensor, index) => {
       let card = dashboard.querySelector(`.sensor-card[data-sensor="${sensor}"]`);
       const canvasId = `${sensor.replace(/\s+/g, '')}Chart`; // Remove spaces for ID
 
-      // Get units for this sensor
-      const units = getUnitsForSensor(sensor);
-      
       // Create new card if it doesn't exist
       if (!card) {
         const clone = template.content.cloneNode(true);
@@ -233,14 +238,15 @@ async function updateDashboard() {
         card.dataset.sensor = sensor;
 
         // Set up card elements
-        card.querySelector('.sensor-title').textContent = sensor;
+        const details = getSensorDetails(sensor);
+        card.querySelector('.sensor-title').textContent = details.fullName;
         const canvas = card.querySelector('canvas');
-        canvas.id = canvasId; // Set the canvas ID
+        canvas.id = canvasId;
 
         dashboard.appendChild(card);
 
         const colorConfig = getColor(index);
-        charts[sensor] = createChart(canvasId, sensor, colorConfig, units);
+        charts[sensor] = createChart(canvasId, sensor, colorConfig);
       }
 
       // Update chart data
@@ -248,93 +254,45 @@ async function updateDashboard() {
       let values = data[sensor].values || [];
       let times = data[sensor].times || [];
 
-      // Check if this is a multi-channel sensor (values is array of arrays)
-      const isMultiChannel = Array.isArray(values[0]);
-      
       // Trim data to MAX_POINTS
       if (times.length > MAX_POINTS) {
         times = times.slice(-MAX_POINTS);
-        if (isMultiChannel) {
-          values = values.map(channel => channel.slice(-MAX_POINTS));
-        } else {
-          values = values.slice(-MAX_POINTS);
-        }
+        values = values.slice(-MAX_POINTS);
       }
 
       // Update chart
       chart.data.labels = times;
-      
-      if (isMultiChannel) {
-        // For multi-channel sensors, update each dataset
-        values.forEach((channelValues, i) => {
-          if (chart.data.datasets[i]) {
-            chart.data.datasets[i].data = channelValues;
-          }
-        });
-      } else {
-        // For single channel sensors, update the first dataset
-        if (chart.data.datasets[0]) {
-          chart.data.datasets[0].data = values;
-        }
-      }
-      
+      chart.data.datasets[0].data = values;
       chart.update();
 
       // Update card info
-      const stats = calculateStats(values);
-      
-      if (isMultiChannel) {
-        // For multi-channel sensors, show all channels' current values
-        let currentValuesHtml = '';
-        stats.forEach((stat, i) => {
-          if (stat && values[i] && values[i].length > 0) {
-            const currentValue = values[i][values[i].length - 1];
-            currentValuesHtml += `<div>Channel ${i+1}: ${currentValue.toFixed(2)} ${units[i] || ''}</div>`;
-          }
-        });
-        card.querySelector('.current-value').innerHTML = currentValuesHtml || 'No data';
-      } else {
-        // For single channel sensors
-        const currentValue = values.length > 0 ? values[values.length - 1] : null;
-        if (currentValue !== null) {
-          card.querySelector('.current-value').textContent = `${currentValue.toFixed(2)} ${units[0] || ''}`;
-        }
+      const details = getSensorDetails(sensor);
+      const currentValue = values.length > 0 ? values[values.length - 1] : null;
+      if (currentValue !== null) {
+        card.querySelector('.current-value').textContent = `${currentValue.toFixed(2)} ${details.unit}`;
       }
       
       const lastTime = times.length > 0 ? times[times.length - 1] : '--:--:--';
       card.querySelector('.last-update').textContent = `Last update: ${lastTime}`;
       
       // Update stats
+      const stats = calculateStats(values);
       if (stats) {
-        if (isMultiChannel) {
-          let statsHtml = '';
-          stats.forEach((stat, i) => {
-            if (stat) {
-              statsHtml += `
-                <div><strong>Channel ${i+1}:</strong></div>
-                <div>Min: ${stat.min} ${units[i] || ''}</div>
-                <div>Max: ${stat.max} ${units[i] || ''}</div>
-                <div>Avg: ${stat.avg} ${units[i] || ''}</div>
-                <br>
-              `;
-            }
-          });
-          card.querySelector('.stats-container').innerHTML = statsHtml;
-        } else if (stats[0]) {
-          card.querySelector('.min-value').textContent = `${stats[0].min} ${units[0] || ''}`;
-          card.querySelector('.max-value').textContent = `${stats[0].max} ${units[0] || ''}`;
-          card.querySelector('.avg-value').textContent = `${stats[0].avg} ${units[0] || ''}`;
-        }
+        card.querySelector('.min-value').textContent = `${stats.min} ${details.unit}`;
+        card.querySelector('.max-value').textContent = `${stats.max} ${details.unit}`;
+        card.querySelector('.avg-value').textContent = `${stats.avg} ${details.unit}`;
       }
     });
+
+    // Show message if no sensors found
+    const noChartMessage = document.getElementById('noChartMessage');
+    if (noChartMessage) {
+      noChartMessage.style.display = Object.keys(data).length === 0 ? 'block' : 'none';
+    }
   } catch (err) {
     console.error("Dashboard update failed:", err);
   }
 }
 
-// Initial fetch of sensor metadata and then start the dashboard updates
-fetchSensorMetadata().then(() => {
-  // Initial and periodic update
-  setInterval(updateDashboard, 2000);
-  updateDashboard();
-});
+// Start the initialization
+initializeDashboard();
