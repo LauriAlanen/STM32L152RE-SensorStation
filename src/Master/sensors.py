@@ -6,6 +6,50 @@ import math
 ADC_STEP_SIZE_U = 3.3 / 4095
 
 
+def modbus_crc(data: bytearray) -> bytearray:
+    """
+    Calculate the Modbus RTU CRC16 for the provided data.
+
+    Args:
+        data (bytearray): Frame bytes to calculate the CRC for.
+
+    Returns:
+        bytearray: A two-byte CRC (low byte first, then high byte).
+    """
+    crc = 0xFFFF
+    for pos in data:
+        crc ^= pos
+        for _ in range(8):
+            if crc & 0x0001:
+                crc >>= 1
+                crc ^= 0xA001
+            else:
+                crc >>= 1
+    # Return as two bytes: high byte first then low byte
+    return bytearray([(crc >> 8) & 0xFF, crc & 0xFF])
+
+
+def build_modbus_request(address: int, register: int, count: int) -> bytearray:
+    """
+    Build a dynamic Modbus request frame.
+
+    Args:
+        address (int): The Modbus address of the sensor.
+        register (int): The register address to start reading from.
+        count (int): The number of registers to read.
+
+    Returns:
+        bytearray: The complete request frame including the CRC.
+    """
+    # Construct the frame: [address, function code (0x04 for input registers),
+    # high and low byte of starting register, high and low byte of register count]
+    frame = bytearray([address, 0x04,
+                       (register >> 8) & 0xFF, register & 0xFF,
+                       (count >> 8) & 0xFF, count & 0xFF])
+    frame.extend(modbus_crc(frame))
+    return frame
+
+
 class Sensor:
     """
     Base sensor class with a generic method for reading sensor data.
@@ -30,6 +74,13 @@ class Sensor:
             serial_port.open()
 
         serial_port.write(request_frame)
+        # Print the frame with 2bytes at a time for debugging
+        print("Request Frame: ", end='')
+        for i in range(0, len(request_frame), 2):
+            print(
+                f"{request_frame[i]:02X} {request_frame[i + 1]:02X}", end=' ')
+        print()
+
         raw_value = bytearray(serial_port.read(7))
 
         if len(raw_value) < 5:
@@ -41,13 +92,9 @@ class Sensor:
 class SGP30(Sensor):
     """Air quality sensor (SGP30) handling CO2 and VOC readings."""
 
-    def __init__(self, name: str):
+    def __init__(self, address: int, name: str):
         self.name = name
-        # Precomputed request frames for each type
-        self.co2_request_frame = bytearray(
-            [0x05, 0x04, 0x00, 0x01, 0x00, 0x01, 0x8E, 0x61])
-        self.voc_request_frame = bytearray(
-            [0x05, 0x04, 0x00, 0x02, 0x00, 0x01, 0x8E, 0x91])
+        self.address = address  # Modbus address for the sensor
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -58,12 +105,15 @@ class SGP30(Sensor):
             option (int): 0 for CO2 (ppm), any other integer for VOC (ppb).
 
         Returns:
-            int: Sensor reading.
+            float: Sensor reading.
         """
+        # For SGP30, assume register 0x0001 holds CO2 and register 0x0002 holds VOC
         if option == 0:
-            return self.read_sensor(serial_port, self.co2_request_frame, self.convert)
+            request_frame = build_modbus_request(self.address, 0x01, 1)
         else:
-            return self.read_sensor(serial_port, self.voc_request_frame, self.convert)
+            request_frame = build_modbus_request(self.address, 0x02, 1)
+
+        return self.read_sensor(serial_port, request_frame, self.convert)
 
     @staticmethod
     def convert(modbus_frame: bytearray) -> int:
@@ -76,7 +126,6 @@ class SGP30(Sensor):
         Returns:
             int: Converted value.
         """
-        # Using byte indices 3 and 4 for MSB and LSB respectively
         msb = modbus_frame[3]
         lsb = modbus_frame[4]
         return (msb << 8) | lsb
@@ -89,13 +138,10 @@ class DHT22(Sensor):
     Enforces a minimum delay between consecutive readings.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, address: int, name: str):
         self.name = name
-        self.temperature_request_frame = bytearray(
-            [0x06, 0x04, 0x00, 0x01, 0x00, 0x01, 0xBD, 0x61])
-        self.humidity_request_frame = bytearray(
-            [0x06, 0x04, 0x00, 0x02, 0x00, 0x01, 0xBD, 0x91])
-        self.last_read_time: float = 0.0  # Initialized to epoch zero
+        self.address = address  # Modbus address for the sensor
+        self.last_read_time: float = 0.0
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
@@ -108,18 +154,18 @@ class DHT22(Sensor):
         Returns:
             float: Converted sensor reading.
         """
-        # Enforce at least 0.5s cooldown between reads
+        # Ensure at least a 0.5s pause between consecutive reads
         elapsed_time = time.time() - self.last_read_time
         if elapsed_time < 0.5:
             time.sleep(0.5 - elapsed_time)
 
+        # For DHT22, assume register 0x0001 is for temperature and 0x0002 for humidity.
         if option == 0:
-            value = self.read_sensor(
-                serial_port, self.temperature_request_frame, self.convert)
+            request_frame = build_modbus_request(self.address, 0x01, 1)
         else:
-            value = self.read_sensor(
-                serial_port, self.humidity_request_frame, self.convert)
+            request_frame = build_modbus_request(self.address, 0x02, 1)
 
+        value = self.read_sensor(serial_port, request_frame, self.convert)
         self.last_read_time = time.time()
         return value
 
@@ -143,10 +189,9 @@ class DHT22(Sensor):
 class NS1L9M51(Sensor):
     """Light sensor NS1L9M51 converting ADC readings to lux."""
 
-    def __init__(self, name: str):
+    def __init__(self, address: int, name: str):
         self.name = name
-        self.request_frame = bytearray(
-            [0x04, 0x04, 0x00, 0x01, 0x00, 0x01, 0x5F, 0x60])
+        self.address = address  # Modbus address for the sensor
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
@@ -159,7 +204,9 @@ class NS1L9M51(Sensor):
         Returns:
             float: Calculated lux value.
         """
-        return self.read_sensor(serial_port, self.request_frame, self.convert)
+        # Use register 0x0001 for NS1L9M51
+        request_frame = build_modbus_request(self.address, 0x01, 1)
+        return self.read_sensor(serial_port, request_frame, self.convert)
 
     @staticmethod
     def convert(modbus_frame: bytearray) -> float:
@@ -185,10 +232,9 @@ class LMT84LP(Sensor):
     Temperature sensor LMT84LP that converts ADC readings to temperature.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, address: int, name: str):
         self.name = name
-        self.request_frame = bytearray(
-            [0x01, 0x04, 0x00, 0x01, 0x00, 0x01, 0x0A, 0x60])
+        self.address = address  # Modbus address for the sensor
 
     def read(self, serial_port: serial.Serial, option: int = 0) -> float:
         """
@@ -201,7 +247,9 @@ class LMT84LP(Sensor):
         Returns:
             float: Temperature in degrees Celsius.
         """
-        return self.read_sensor(serial_port, self.request_frame, self.convert)
+        # Use register 0x0001 for LMT84LP
+        request_frame = build_modbus_request(self.address, 0x01, 1)
+        return self.read_sensor(serial_port, request_frame, self.convert)
 
     @staticmethod
     def convert(modbus_frame: bytearray) -> float:
@@ -225,7 +273,7 @@ class LMT84LP(Sensor):
         adc_result = (msb << 8) | lsb
         voltage = ADC_STEP_SIZE_U * adc_result
 
-        # Linear mapping from voltage to temperature based on calibration
+        # Map voltage linearly to the temperature range
         temperature = ((voltage - u_min) / (u_max - u_min)) * \
             (t_max - t_min) + t_min
         return round(temperature, 1)
