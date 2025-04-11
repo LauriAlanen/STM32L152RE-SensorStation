@@ -1,427 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor Data Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --accent-color: #bb86fc;
-            --stat-bg: #2d2d2d;
-            --grid-line: #333333;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 20px;
-        }
-        
-        h1 {
-            text-align: center;
-            color: var(--accent-color);
-            margin-bottom: 25px;
-        }
-        
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 20px;
-        }
-        
-        .sensor-card {
-            background: var(--card-bg);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            padding: 15px;
-            transition: transform 0.2s;
-        }
-        
-        .sensor-card:hover {
-            transform: translateY(-2px);
-        }
-        
-        .chart-container {
-            height: 250px;
-            margin-bottom: 10px;
-        }
-        
-        .sensor-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .sensor-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-        
-        .current-value {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            background: var(--stat-bg);
-            padding: 5px 10px;
-            border-radius: 4px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 10px;
-        }
-        
-        .stat-item {
-            background: var(--stat-bg);
-            padding: 6px 4px;
-            border-radius: 3px;
-            text-align: center;
-        }
-        
-        .stat-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-        }
-        
-        .stat-value {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .last-update {
-            text-align: right;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin-top: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensor Data Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Sensor Data Dashboard</h1>
-    <div class="dashboard">
-        <!-- DHT22 Humidity -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">DHT22 Humidity</div>
-                <div class="current-value" id="dht22_humidityCurrent">-- %</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="dht22HumidityChart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="dht22_humidityMin">-- %</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="dht22_humidityMax">-- %</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="dht22_humidityAvg">-- %</div>
-                </div>
-            </div>
-            <div class="last-update" id="dht22_humidityTime">Last update: --:--:--</div>
+  <h1>Sensor Data Dashboard</h1>
+  <div class="dashboard">
+    <!-- DHT22 Humidity -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">DHT22 Humidity</div>
+        <div class="current-value" id="dht22_humidityCurrent">-- %</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="dht22HumidityChart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="dht22_humidityMin">-- %</div>
         </div>
-
-        <!-- DHT22 Temperature -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">DHT22 Temperature</div>
-                <div class="current-value" id="dht22_tempCurrent">-- °C</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="dht22TempChart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="dht22_tempMin">-- °C</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="dht22_tempMax">-- °C</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="dht22_tempAvg">-- °C</div>
-                </div>
-            </div>
-            <div class="last-update" id="dht22_tempTime">Last update: --:--:--</div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="dht22_humidityMax">-- %</div>
         </div>
-
-        <!-- LMT84 Temperature -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">LMT84 Temperature</div>
-                <div class="current-value" id="lmt84Current">-- °C</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="lmt84Chart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="lmt84Min">-- °C</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="lmt84Max">-- °C</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="lmt84Avg">-- °C</div>
-                </div>
-            </div>
-            <div class="last-update" id="lmt84Time">Last update: --:--:--</div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="dht22_humidityAvg">-- %</div>
         </div>
-
-        <!-- NS1L9M51 Lux -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">NS1L9M51 Light</div>
-                <div class="current-value" id="ns1l9m51Current">-- Lux</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="ns1l9m51Chart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="ns1l9m51Min">-- Lux</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="ns1l9m51Max">-- Lux</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="ns1l9m51Avg">-- Lux</div>
-                </div>
-            </div>
-            <div class="last-update" id="ns1l9m51Time">Last update: --:--:--</div>
-        </div>
-
-        <!-- SGP30 CO2 -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">SGP30 CO2</div>
-                <div class="current-value" id="sgp30_co2Current">-- ppm</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="sgp30Co2Chart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="sgp30_co2Min">-- ppm</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="sgp30_co2Max">-- ppm</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="sgp30_co2Avg">-- ppm</div>
-                </div>
-            </div>
-            <div class="last-update" id="sgp30_co2Time">Last update: --:--:--</div>
-        </div>
-
-        <!-- SGP30 VOC -->
-        <div class="sensor-card">
-            <div class="sensor-header">
-                <div class="sensor-title">SGP30 VOC</div>
-                <div class="current-value" id="sgp30_vocCurrent">-- ppb</div>
-            </div>
-            <div class="chart-container">
-                <canvas id="sgp30VocChart"></canvas>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Minimum</div>
-                    <div class="stat-value" id="sgp30_vocMin">-- ppb</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Maximum</div>
-                    <div class="stat-value" id="sgp30_vocMax">-- ppb</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Average</div>
-                    <div class="stat-value" id="sgp30_vocAvg">-- ppb</div>
-                </div>
-            </div>
-            <div class="last-update" id="sgp30_vocTime">Last update: --:--:--</div>
-        </div>
+      </div>
+      <div class="last-update" id="dht22_humidityTime">Last update: --:--:--</div>
     </div>
 
-    <script>
-        // Dark mode chart colors
-        const chartColors = {
-            dht22_humidity: 'rgba(100, 181, 246, 1)',
-            dht22_temp: 'rgba(244, 143, 177, 1)',
-            lmt84: 'rgba(77, 208, 225, 1)',
-            ns1l9m51: 'rgba(255, 183, 77, 1)',
-            sgp30_co2: 'rgba(179, 157, 219, 1)',
-            sgp30_voc: 'rgba(255, 213, 79, 1)'
-        };
+    <!-- DHT22 Temperature -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">DHT22 Temperature</div>
+        <div class="current-value" id="dht22_tempCurrent">-- °C</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="dht22TempChart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="dht22_tempMin">-- °C</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="dht22_tempMax">-- °C</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="dht22_tempAvg">-- °C</div>
+        </div>
+      </div>
+      <div class="last-update" id="dht22_tempTime">Last update: --:--:--</div>
+    </div>
 
-        // Initialize all charts with dark mode
-        const charts = {
-            dht22_humidity: createChart('dht22HumidityChart', 'Humidity (%)', chartColors.dht22_humidity),
-            dht22_temp: createChart('dht22TempChart', 'Temperature (°C)', chartColors.dht22_temp),
-            lmt84: createChart('lmt84Chart', 'Temperature (°C)', chartColors.lmt84),
-            ns1l9m51: createChart('ns1l9m51Chart', 'Light (Lux)', chartColors.ns1l9m51),
-            sgp30_co2: createChart('sgp30Co2Chart', 'CO2 (ppm)', chartColors.sgp30_co2),
-            sgp30_voc: createChart('sgp30VocChart', 'VOC (ppb)', chartColors.sgp30_voc)
-        };
+    <!-- LMT84 Temperature -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">LMT84 Temperature</div>
+        <div class="current-value" id="lmt84Current">-- °C</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="lmt84Chart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="lmt84Min">-- °C</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="lmt84Max">-- °C</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="lmt84Avg">-- °C</div>
+        </div>
+      </div>
+      <div class="last-update" id="lmt84Time">Last update: --:--:--</div>
+    </div>
 
-        function createChart(canvasId, label, color) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: label,
-                        data: [],
-                        borderColor: color,
-                        backgroundColor: color.replace('1)', '0.2)'),
-                        borderWidth: 1.5,
-                        pointRadius: 1,
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: { 
-                                display: true, 
-                                text: 'Time',
-                                color: '#a0a0a0'
-                            },
-                            grid: { 
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            },
-                            ticks: {
-                                color: '#a0a0a0'
-                            }
-                        },
-                        y: {
-                            title: { 
-                                display: true, 
-                                text: label,
-                                color: '#a0a0a0'
-                            },
-                            grid: { 
-                                color: 'rgba(255, 255, 255, 0.05)'
-                            },
-                            ticks: {
-                                color: '#a0a0a0'
-                            },
-                            beginAtZero: canvasId !== 'ns1l9m51Chart'
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#2d2d2d',
-                            titleColor: '#ffffff',
-                            bodyColor: '#e0e0e0',
-                            borderColor: '#444',
-                            borderWidth: 1
-                        }
-                    }
-                }
-            });
-        }
+    <!-- NS1L9M51 Lux -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">NS1L9M51 Light</div>
+        <div class="current-value" id="ns1l9m51Current">-- Lux</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="ns1l9m51Chart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="ns1l9m51Min">-- Lux</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="ns1l9m51Max">-- Lux</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="ns1l9m51Avg">-- Lux</div>
+        </div>
+      </div>
+      <div class="last-update" id="ns1l9m51Time">Last update: --:--:--</div>
+    </div>
 
-        // Calculate statistics
-        function calculateStats(values) {
-            if (!values || values.length === 0) return null;
-            
-            const min = Math.min(...values);
-            const max = Math.max(...values);
-            const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-            
-            return {
-                min: min.toFixed(2),
-                max: max.toFixed(2),
-                avg: avg.toFixed(2)
-            };
-        }
+    <!-- SGP30 CO2 -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">SGP30 CO2</div>
+        <div class="current-value" id="sgp30_co2Current">-- ppm</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="sgp30Co2Chart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="sgp30_co2Min">-- ppm</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="sgp30_co2Max">-- ppm</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="sgp30_co2Avg">-- ppm</div>
+        </div>
+      </div>
+      <div class="last-update" id="sgp30_co2Time">Last update: --:--:--</div>
+    </div>
 
-        // Update dashboard with new data
-        async function updateDashboard() {
-            try {
-                const response = await fetch('/data');
-                const data = await response.json();
+    <!-- SGP30 VOC -->
+    <div class="sensor-card">
+      <div class="sensor-header">
+        <div class="sensor-title">SGP30 VOC</div>
+        <div class="current-value" id="sgp30_vocCurrent">-- ppb</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="sgp30VocChart"></canvas>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="sgp30_vocMin">-- ppb</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="sgp30_vocMax">-- ppb</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="sgp30_vocAvg">-- ppb</div>
+        </div>
+      </div>
+      <div class="last-update" id="sgp30_vocTime">Last update: --:--:--</div>
+    </div>
+  </div>
 
-                // Process each sensor
-                Object.keys(charts).forEach(sensor => {
-                    if (!data[sensor]) return;
-
-                    const values = data[sensor].values || [];
-                    const times = data[sensor].times || [];
-                    const currentValue = values.length > 0 ? values[values.length - 1] : null;
-                    const lastTime = times.length > 0 ? times[times.length - 1] : '--:--:--';
-                    const stats = calculateStats(values);
-
-                    // Update chart
-                    charts[sensor].data.labels = times;
-                    charts[sensor].data.datasets[0].data = values;
-                    charts[sensor].update();
-
-                    // Update UI elements
-                    if (currentValue !== null) {
-                        const unit = getUnitForSensor(sensor);
-                        document.getElementById(`${sensor}Current`).textContent = `${currentValue.toFixed(2)} ${unit}`;
-                        document.getElementById(`${sensor}Time`).textContent = `Last update: ${lastTime}`;
-
-                        if (stats) {
-                            document.getElementById(`${sensor}Min`).textContent = `${stats.min} ${unit}`;
-                            document.getElementById(`${sensor}Max`).textContent = `${stats.max} ${unit}`;
-                            document.getElementById(`${sensor}Avg`).textContent = `${stats.avg} ${unit}`;
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Error fetching sensor data:', error);
-            }
-        }
-
-        function getUnitForSensor(sensor) {
-            const units = {
-                dht22_humidity: '%',
-                dht22_temp: '°C',
-                lmt84: '°C',
-                ns1l9m51: 'Lux',
-                sgp30_co2: 'ppm',
-                sgp30_voc: 'ppb'
-            };
-            return units[sensor] || '';
-        }
-
-        // Update every 2 seconds
-        setInterval(updateDashboard, 2000);
-        updateDashboard(); // Initial update
-    </script>
+  <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
