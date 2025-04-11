@@ -9,12 +9,8 @@ app = Flask(__name__)
 store = SensorDataStore()
 master = Master("COM5", 9600)
 master.connect()
-master.add_sensor("Makuuhuoneen Valo", sensors.LMT84LP(0x01, "Testi"))
-master.add_sensor("Makuuhuoneen Ilmanlaatu", sensors.SGP30(0x05, "SGP30"))
-master.add_sensor("Makuuhuone",
-                  sensors.DHT22(0x06, "DHT22"))
 
-collector = SensorDataCollector(master, store, 10)
+collector = SensorDataCollector(master, store, 2)
 
 # Start collection in a background thread
 thread = Thread(target=collector.start, daemon=True)
