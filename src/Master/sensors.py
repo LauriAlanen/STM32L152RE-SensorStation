@@ -144,9 +144,9 @@ class DHT22(Sensor):
     def __init__(self, address: int, name: str):
         super().__init__(address, name)
         self.last_read_time: float = 0.0
-        self.channels = 2  # Option 0: Temperature, Option 1: Humidity
-        self.units = {0: "°C", 1: "%"}  # Temperature in °C, Humidity in %
-        self.channel_names = {0: "Temperature", 1: "Relative Humidity"}
+        self.channels = 2  # Option 0: Humidity, Option 1: Temperature
+        self.units = {0: "%", 1: "°C"}  # Humidity in %, Temperature in °C
+        self.channel_names = {0: "Relative Humidity", 1: "Temperature"}
 
     def read(self, serial_port: serial.Serial, option: int) -> float:
         """
