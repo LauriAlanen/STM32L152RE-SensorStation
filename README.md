@@ -1,7 +1,15 @@
 # STM32L152RE Sensor Station
 
 ## Overview
-The STM32L152RE Sensor Station is an embedded system project that integrates multiple environmental sensors to collect, process, and visualize various environmental parameters. Built around the STM32L152RE microcontroller, it provides a robust platform for real-time environmental monitoring.
+The STM32L152RE Sensor Station is an embedded system project that integrates multiple environmental sensors to collect, process, and visualize various environmental parameters. Built around the STM32L152RE microcontroller, it provides a platform for real-time environmental monitoring.
+
+![image](https://github.com/user-attachments/assets/51431ee9-8ab1-4629-a41c-886593c60b82)
+
+## Web UI
+![image](https://github.com/user-attachments/assets/09b69490-1776-4871-8267-e6ce6b43777d)
+![image](https://github.com/user-attachments/assets/8451a06d-d581-4bf2-944d-fe88e14eaf98)
+
+
 
 ## Features
 
